@@ -123,9 +123,10 @@ This holds for **2,142,768 of 2,142,846 checks (99.996%)**. That proves we read 
 
 ## 7. Business baseline (what "normal" looks like)
 
-- **Trend:** weekly sales fell from $5.97M (week of May 4, 140.2K checks) to $4.83M (week of Aug 10, 119.6K checks). That's about −19%. We still need to separate seasonality from store gaps.
+- **Trend:** per store per day, sales fell 18%, from $6,574 (week of May 4) to $5,404 (week of Aug 10). Chain totals: $5.97M a week (140.2K checks) → $4.83M (119.6K checks). Store gaps are too small to explain it.
+- **Holidays:** Mother's Day (Sun May 10) is the biggest day at $1.45M, and Father's Day (Sun Jun 21) is second at $1.12M. July 4 fell on a Saturday but sold only $0.69M, low for a Saturday.
 - **Weekday:** Fri ($961K a day) and Sat ($944K) are 65% above Mon ($578K) and Tue ($575K).
-- **Hour:** check openings peak at 17:00–18:00 (about 258K each). Lunch peaks at 12:00.
+- **Hour:** check openings peak at 17:00–18:00 (about 258K each). Lunch peaks at 12:00. The busiest single slot is Friday 18:00, with about 3,000 checks opened chain-wide on an average Friday. Sunday lunch is the biggest lunch.
 - **Channels (share of checks):**
 
   | Channel | Checks | Share |
@@ -353,7 +354,26 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 - **Reports:** `reports/missing_values.csv` (null and zero % for every column), `reports/cleaning_summary.json` (the funnel and flag counts) and `reports/label_merges.csv`.
 - **Check:** the balance check still holds on the clean data: 2,142,539 of 2,142,617 receipts, with the same 78 exceptions.
 
-## 13. Technical reference
+## 13. Charts (steps 3 and 4, done Oct 7)
+
+| Chart (`eda_work/charts/`) | What it shows | Slide |
+|---|---|---|
+| `01_missing_values.png` | 104 of 109 columns complete; the 2 empty ones dropped | 3 (cleaning) |
+| `02_cleaning_funnel.png` | 229 receipts removed, 2% flagged and kept, and why | 3 (cleaning) |
+| `03_check_waterfall.png` | $87.32M menu prices → $99.29M collected; 99.996% of receipts balance | 2 (understanding) |
+| `04_daily_trend.png` | Weekly rhythm, Mother's/Father's Day peaks, −18% per store-day by August | 4 (baseline) |
+| `05_weekday_hour_heatmap.png` | Friday 6 PM is the busiest hour; dinner peaks every day | 4 (baseline) or appendix |
+| `06_who_where_not_when.png` | Void/discount rates flat by hour and weekday, wide by store and employee | 4 or 5 (core insight) |
+| `07_discounts_and_voids.png` | Manager comps top discounts ($3.02M); order changes top voids ($0.73M) | 5 (levers) |
+| `08_concentration_curve.png` | 5% of employees → 39% of walked-out receipts, 20% of void $, 21% of discount $ | 5 (levers) |
+| `09_store_scatter.png` | Munster voids 2.9× the chain median | 6 (stores) |
+| `10_munster_by_month.png` | Munster is high every month, about 2.8× the other stores | 6 (stores) or appendix |
+
+Rebuild all charts with `python eda_work/scripts/charts.py` (about 5 seconds), or one chart with e.g. `python eda_work/scripts/charts.py 06`.
+
+The charts use one style: gray data, one blue accent on what the title is about, green and red only for money added or taken off, and the finding in the title. In the clean data there are 84 discount names with amounts above $0.
+
+## 14. Technical reference
 
 - **Location:** `Databricks_challenge/eda_work/` on Santiago's Mac. Use `clean/` for analysis; `parquet/` is the raw flattened copy.
   - `parquet/<table>/<date>.parquet`: the 7 tables, plus `parquet/check_summary/check_summary.parquet`.
@@ -370,7 +390,7 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 - **DuckDB:** an SQL engine that runs inside Python and queries Parquet files directly without loading them into memory: `duckdb.sql("SELECT ... FROM 'eda_work/clean/items.parquet'")`.
 - **Column names in Parquet:** snake_case, e.g. `check_id`, `location_id`, `sold_price`, `gratuity`, `void_cat_name`, `discount_name`, `pay_cat_name`. Every table has `dt` (business date).
 
-## 14. Open questions for the organizers
+## 15. Open questions for the organizers
 
 - What do the job IDs in employees.json mean (which ID is server, manager, cook)?
 - What does `Deleted` mean, and when was the HR file extracted?

@@ -32,8 +32,8 @@ The organizers' structure is: quick dataset overview, key cleaning steps, top pa
 | 1 | Clean tables: positive tip, merged labels, line types, flags, anonymized employees → `eda_work/clean/` | T5 | Done |
 | 2 | Duplicates: 1,800 look-alike **groups** holding 3,774 receipts → 3,545 split bills kept, 229 exact copies ($73) removed | T6 | Done |
 | — | Repo: one-command rebuild (`build_all.py`), setup checker (`check_setup.py`), `README.md` for teammates | — | Done |
-| 3 | Cleaning evidence: missing-values heatmap and cleaning funnel (the numbers are already in `eda_work/reports/`) | T7, T8 | **Waiting for Santiago's go** |
-| 4 | The 6 charts: check waterfall, trend with heatmap, lever bars, concentration curve, store scatter, cleaning funnel | T2, T10–T14, T19, T20 | Not started |
+| 3 | Cleaning visuals: missing-values chart and cleaning funnel (`01`, `02`) | T7, T8 | Done |
+| 4 | Analysis charts (`03`–`10`), one shared style, built by `charts.py` | T2, T10–T14, T19, T20 | Done; team picks which go in the deck |
 | 5 | Deck, script, two timed rehearsals | T1, T3, T21–T23 | Not started |
 
 The full pipeline has been tested end to end: a rebuild reproduces the same rows and the same cleaning numbers.
@@ -46,7 +46,7 @@ P0 means needed for a 4/4 score. P1 means polish if time allows. T5 and T6 are d
 
 - [x] T0 (P0) Ingest and flatten all 115 days into Parquet, then profile every table.
 - [ ] T1 (P0) Schema diagram: 4 reference tables and 7 fact tables, with their keys and what one row means.
-- [ ] T2 (P0) "Anatomy of a check" waterfall: gross $87.1M → item discounts → item sales $86.2M → check discounts → tax → tips → $99.3M collected. It shows that 99.996% of checks balance.
+- [x] T2 (P0) "Anatomy of a check" waterfall: gross $87.1M → item discounts → item sales $86.2M → check discounts → tax → tips → $99.3M collected. It shows that 99.996% of checks balance.
 - [ ] T3 (P0) Context strip: 127 stores, 115 days, 2.14M checks, channel mix, and the business question: where can money leak at the register?
 - [ ] T4 (P1) Ask the organizers for the job ID lookup and what `Deleted` means in the employee file.
 
@@ -54,17 +54,17 @@ P0 means needed for a 4/4 score. P1 means polish if time allows. T5 and T6 are d
 
 - [x] T5 (P0) Build the clean layer. Apply every cleaning decision in the table below and write `eda_work/clean/`, with flag columns: is_modifier, is_empty_check, is_unbalanced, is_dup_candidate, is_long_check.
 - [x] T6 (P0) Resolve the 1,800 possible duplicate groups by comparing their item lines. Result: 3,545 split bills, and 229 exact copies ($73) removed.
-- [ ] T7 (P0) Missing-value matrix: null % and zero % for every column in every table, drawn as one heatmap. The numbers are done (`reports/missing_values.csv`); the chart is not.
-- [ ] T8 (P0) Cleaning funnel: raw records → flagged → excluded, with counts at each step. One slide.
+- [x] T7 (P0) Missing-values chart: every column with any gap and the decision taken (`charts/01_missing_values.png`).
+- [x] T8 (P0) Cleaning funnel: raw records → flagged → excluded, with counts at each step. One slide.
 - [ ] T9 (P1) Cleaning log for the appendix: every decision with before and after counts, ready for Q&A.
 
 ### 3. Exploratory analysis and insights
 
-- [ ] T10 (P0) Trend: daily sales and checks over the 115 days, with a 7-day average. Explain the 19% decline using per-store-day figures, so the store gaps don't distort it.
-- [ ] T11 (P0) Weekday × hour heatmap of check volume, plus void and discount rates by weekday and hour, to show they barely move.
-- [ ] T12 (P0) Lever breakdown: voids by reason, discounts by name, comps, walkouts and cash share, ranked by dollars.
-- [ ] T13 (P0) Concentration curve: cumulative share of walkouts, voids and discounts against the share of employees.
-- [ ] T14 (P0) Store comparison: void rate vs discount rate for all 127 stores, sized by sales, with Munster labeled.
+- [x] T10 (P0) Trend: daily sales with a 7-day average. Per store per day, sales fell 18% ($6,574 → $5,404).
+- [x] T11 (P0) Weekday × hour heatmap of check volume, plus void and discount rates by weekday and hour, to show they barely move.
+- [x] T12 (P0) Lever breakdown: voids by reason, discounts by name, comps, walkouts and cash share, ranked by dollars.
+- [x] T13 (P0) Concentration curve: cumulative share of walkouts, voids and discounts against the share of employees.
+- [x] T14 (P0) Store comparison: void rate vs discount rate for all 127 stores, sized by sales, with Munster labeled.
 - [ ] T15 (P1) Relationships: correlations among employee risk metrics (void rate, discount rate, walkouts, cash share, self-approvals, refunds, tip %). Do the signals show up in the same people?
 - [ ] T16 (P1) Manager and employee pairs: the same manager repeatedly approving the same server's voids or discounts.
 - [ ] T17 (P1) Munster deep dive: which employees and void reasons drive its 2.3% void rate.
@@ -73,8 +73,8 @@ P0 means needed for a 4/4 score. P1 means polish if time allows. T5 and T6 are d
 
 ### 4. Visualizations
 
-- [ ] T19 (P0) One chart style for every slide: one palette, titles that state the finding with its number, axes with units, and a source line.
-- [ ] T20 (P0) Final set of 6 charts: check waterfall, cleaning funnel, trend with heatmap, lever bars, concentration curve and store scatter. Each one proves exactly one slide's claim.
+- [x] T19 (P0) One chart style for every slide: one palette, titles that state the finding with its number, axes with units, and a source line.
+- [x] T20 (P0) Final set of 6 charts: check waterfall, cleaning funnel, trend with heatmap, lever bars, concentration curve and store scatter. Each one proves exactly one slide's claim.
 
 ### 5. Presentation and communication
 
@@ -111,16 +111,33 @@ Core rule: in fraud work, outliers are signal, so we flag them instead of deleti
 | Consistency | 67% of item lines are $0 modifiers | Add `is_modifier` (child line with $0 price; combo components are priced, so don't use parent_seq alone) |
 | Privacy | Names and birth dates in the HR file | Drop names and show IDs only |
 
+## Charts
+
+| Chart (`eda_work/charts/`) | What it shows | Slide |
+|---|---|---|
+| `01_missing_values.png` | 104 of 109 columns complete; the 2 empty ones dropped | 3 (cleaning) |
+| `02_cleaning_funnel.png` | 229 receipts removed, 2% flagged and kept, and why | 3 (cleaning) |
+| `03_check_waterfall.png` | $87.32M menu prices → $99.29M collected; 99.996% of receipts balance | 2 (understanding) |
+| `04_daily_trend.png` | Weekly rhythm, Mother's/Father's Day peaks, −18% per store-day by August | 4 (baseline) |
+| `05_weekday_hour_heatmap.png` | Friday 6 PM is the busiest hour; dinner peaks every day | 4 (baseline) or appendix |
+| `06_who_where_not_when.png` | Void/discount rates flat by hour and weekday, wide by store and employee | 4 or 5 (core insight) |
+| `07_discounts_and_voids.png` | Manager comps top discounts ($3.02M); order changes top voids ($0.73M) | 5 (levers) |
+| `08_concentration_curve.png` | 5% of employees → 39% of walked-out receipts, 20% of void $, 21% of discount $ | 5 (levers) |
+| `09_store_scatter.png` | Munster voids 2.9× the chain median | 6 (stores) |
+| `10_munster_by_month.png` | Munster is high every month, about 2.8× the other stores | 6 (stores) or appendix |
+
+Rebuild all charts with `python eda_work/scripts/charts.py` (about 5 seconds), or one chart with e.g. `python eda_work/scripts/charts.py 06`.
+
 ## 5-minute storyboard
 
 | # | Time | Slide title (the claim) | Visual | Rubric row |
 |---|---|---|---|---|
 | 1 | 0:00–0:30 | 127 stores, 115 days, 2.14M checks: where can money leak at the register? | Context strip, channel mix | Understanding |
-| 2 | 0:30–1:10 | Every check balances to the cent, so we can trust the money | Schema and check waterfall | Understanding |
-| 3 | 1:10–1:55 | 11 GB of nested JSON became 7 clean tables; outliers are flagged, not deleted | Cleaning funnel and top 5 fixes | Cleaning |
-| 4 | 1:55–2:35 | Sales follow the week, but voids stay near 0.8% every day and hour | Daily trend, weekday × hour heatmap | Insights |
-| 5 | 2:35–3:25 | $3M in discounts and $726K in voids; 5% of employees drive 39% of walked-out receipts | Lever bars and concentration curve | Insights, Visuals |
-| 6 | 3:25–4:15 | Stores differ up to 7×; Munster voids nearly 3× the chain average, every month | Store scatter, Munster monthly void rate | Insights |
+| 2 | 0:30–1:10 | Every check balances to the cent, so we can trust the money | Schema and `03` waterfall | Understanding |
+| 3 | 1:10–1:55 | 11 GB of nested JSON became 7 clean tables; outliers are flagged, not deleted | `02` funnel + `01` missing values | Cleaning |
+| 4 | 1:55–2:35 | Sales follow the week, but voids stay near 0.8% every day and hour | `04` daily trend + `06` where/who not when | Insights |
+| 5 | 2:35–3:25 | $3M in discounts and $726K in voids; 5% of employees drive 39% of walked-out receipts | `07` levers + `08` concentration curve | Insights, Visuals |
+| 6 | 3:25–4:15 | Stores differ up to 7×; Munster voids nearly 3× the chain average, every month | `09` store scatter (+ `10` by month) | Insights |
 | 7 | 4:15–4:50 | Risk is about who and where, so Phase 2 scores employees and stores | 3 takeaways and next step | Communication |
 
 The appendix holds the data dictionary, the cleaning log and backup charts for Q&A.

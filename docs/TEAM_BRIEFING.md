@@ -73,7 +73,7 @@ Each lever below has an honest use and a theft version.
    - Friday and Saturday sell about 65% more than Monday and Tuesday.
    - The dinner peak is 17:00–18:00.
    - In-store is 77% of receipts and delivery apps about 12%.
-   - Weekly sales dropped about 19% from May to August.
+   - Sales per store per day dropped 18% from May to August, and Mother's Day was the biggest day ($1.45M).
 3. **Timing doesn't explain risk.** The void rate stays at about 0.8% of sales on every weekday and at every hour.
 4. **People and stores do:**
    - The **top 5% of employees account for 39% of walked-out receipts**, 20% of void dollars and 21% of discount dollars.
@@ -128,8 +128,8 @@ The key to join tables is `dt` + `location_id` + `check_id`.
 
 - [x] Finish the clean tables and settle the possible duplicates (done: `eda_work/clean/`)
 - [x] Repo ready for the team: `README.md`, one-command rebuild, setup checker
-- [ ] Cleaning visuals: missing-values heatmap and cleaning funnel
-- [ ] Make about 6 charts (receipt waterfall, cleaning funnel, trend and heatmap, lever bars, concentration curve, store scatter)
+- [x] Cleaning visuals and all analysis charts: 10 PNGs in `eda_work/charts/` (list and suggested slide for each in `EDA_PLAN.md`, section "Charts")
+- [ ] Team picks which charts go in the deck
 - [ ] Build the 7-slide deck and write the script (about 650 words)
 - [ ] Do 2 timed run-throughs, staying under 4:45
 
