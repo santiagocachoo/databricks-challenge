@@ -61,6 +61,66 @@ def save(f, name):
 
 money = lambda v: f"${v/1e6:,.2f}M"
 
+# ================================================================= 00 data model (slide 2)
+def c00():
+    from matplotlib.patches import FancyBboxPatch
+    n = lambda t: q(f"SELECT count(*) FROM read_parquet('{C}/{t}.parquet')")[0][0]
+    rec, lines, disc, voids, pays, taxes = n("checks"), n("items"), n("discounts"), n("voids"), n("payments"), n("taxes")
+    stores, active = q(f"SELECT count(*), count(*) FILTER (WHERE active_in_data) FROM read_parquet('{C}/stores.parquet')")[0]
+    chans = n("channels"); used_ch = q(f"SELECT count(DISTINCT revenue_center_id) FROM {CK}")[0][0]
+    emps, ring = q(f"SELECT count(*), count(*) FILTER (WHERE rings_sales) FROM read_parquet('{C}/employees.parquet')")[0]
+    n_flags = len([r for r in q(f"DESCRIBE SELECT * FROM {CK}") if r[0].startswith(("flag_", "has_", "is_"))])
+    sold = q(f"SELECT count(DISTINCT item_id) FROM read_parquet('{C}/items.parquet')")[0][0]
+    try:
+        menu = q(f"SELECT count(*) FROM read_json('{(REPO / 'Applebees Challenge' / 'dimensions' / 'items' / 'items.json').as_posix()}')")[0][0]
+        menu_line = f"{menu:,} items · {sold:,} sold"
+    except Exception:
+        menu_line = f"{sold:,} items sold"
+    short = lambda v: f"{v/1e6:.1f}M" if v >= 1e6 else (f"{v/1e3:.0f}K" if v >= 1e4 else f"{v:,}")
+    f = fig("Every detail links back to one receipt; 4 lookup tables turn IDs into names",
+            "The cleaned data model. Detail tables join to receipts on date + store + receipt number. Row counts after cleaning.")
+    ax = f.add_axes([0.03, 0.10, 0.94, 0.74]); ax.set_xlim(0, 100); ax.set_ylim(0, 50); ax.axis("off")
+    def box(x, y, w, h, title, sub, fields, kind):
+        fc, ec, lw = {"hub": (BLUE, BLUE, 0), "fact": ("#f3f2ee", AXIS, 1), "dim": (BG, GRAY_D, 1.2)}[kind]
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.0", fc=fc, ec=ec, lw=lw, ls="-" if kind != "dim" else (0, (4, 2))))
+        tc, sc = ("white", "white") if kind == "hub" else (INK, INK2)
+        cx = x + w / 2
+        ax.text(cx, y + h - 2.0, title, ha="center", va="center", fontsize=13.5 if kind == "hub" else 12, fontweight="bold", color=tc)
+        ax.text(cx, y + h - 4.1, sub, ha="center", va="center", fontsize=11 if kind == "hub" else 10.5, color=sc)
+        ax.text(cx, y + 1.9, fields, ha="center", va="center", fontsize=10 if kind == "hub" else 9.5, color=sc, linespacing=1.3)
+    def link(x1, y1, x2, y2, dashed=False):
+        ax.annotate("", xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(arrowstyle="-", color=GRAY_D, lw=1.2, ls=(0, (3, 2)) if dashed else "-"))
+    # lookups on top
+    box(20, 40, 24, 9, "Stores", f"{stores} stores · {active} with sales", "name · opened · closed", "dim")
+    box(56, 40, 24, 9, "Sales channels", f"{chans} channels · {used_ch} used", "In-Store · To Go · DoorDash…", "dim")
+    # hub
+    box(31, 22, 38, 12, "Receipts (checks)", f"{rec:,} receipts · key: date + store + receipt #",
+        f"table · open/close time · guests · channel\ntotals · tip · {n_flags} yes/no flags", "hub")
+    # lookups on the sides
+    box(1, 23, 24, 10, "Menu items", menu_line, "name · category", "dim")
+    box(75, 23, 24, 10, "Employees", f"{emps:,} records · {ring:,} ring sales", "home store · job ID · no names\non lines, discounts, voids, payments", "dim")
+    # details at the bottom
+    kids = [("Item lines", lines, "item · price · line type\nemployee"), ("Discounts", disc, "name · amount · level\nemployee · manager"),
+            ("Voids", voids, "reason · amount\nemployee · manager"), ("Taxes", taxes, "category · amount"),
+            ("Payments", pays, "method · amount · tip\nemployee")]
+    w, gap = 17.6, 2.5
+    for i, (t, cnt, fl) in enumerate(kids):
+        x = 1 + i * (w + gap)
+        box(x, 1, w, 10, t, f"{short(cnt)} rows", fl, "fact")
+        cx = x + w / 2
+        link(cx, 11, min(max(cx, 33), 67), 22)
+    link(32, 40, 39, 34, dashed=True); link(68, 40, 61, 34, dashed=True)
+    link(13, 23, 10, 11, dashed=True)
+    link(87, 23, 89.2, 11, dashed=True)
+    ax.text(34.5, 37.2, "location_id", fontsize=9.5, color=MUTED, ha="right", va="center"); ax.text(65.5, 37.2, "revenue_center_id", fontsize=9.5, color=MUTED, ha="left", va="center")
+    ax.text(10.5, 17, "item_id", fontsize=9.5, color=MUTED, ha="right", va="center")
+    ax.text(89.6, 17, "employee_id", fontsize=9.5, color=MUTED, ha="left", va="center")
+    ax.text(50, 18.0, "date + store + receipt #", fontsize=10, color=INK2, ha="center", va="center",
+            bbox=dict(boxstyle="round,pad=0.25", fc=BG, ec="none"))
+    f.text(0.045, 0.062, "Solid lines = detail tables (many rows per receipt). Dashed = lookup tables. The employee file was not in the official guide.",
+           fontsize=10, color=INK2)
+    save(f, "00_data_model.png")
+
 # ================================================================= 01 missing values (step 3)
 def c01():
     n_chk = q(f"SELECT count(*) FROM {CK}")[0][0] + 229          # raw receipts (before removing exact copies)
@@ -230,7 +290,7 @@ def c06():
     wd_v = rates(f"SELECT sum(void_amount)/sum(gross_sales) FROM {CK} GROUP BY weekday_num")
     wd_d = rates(f"SELECT sum(item_discounts+check_discounts)/sum(gross_sales) FROM {CK} GROUP BY weekday_num")
     st = q(f"SELECT location_id, sum(void_amount)/sum(gross_sales), sum(item_discounts+check_discounts)/sum(gross_sales) FROM {CK} GROUP BY 1")
-    st_v = np.array([r[1] * 100 for r in st]); st_d = np.array([r[2] * 100 for r in st])
+    st_v = np.array([r[1] * 100 for r in st]); st_d = np.array([r[2] * 100 for r in st]); st_ids = np.array([r[0] for r in st])
     mun = [r for r in st if r[0] == 80][0]
     em = q(f"""WITH g AS (SELECT employee_id, sum(gross_price*quantity) gross FROM read_parquet('{C}/items.parquet') WHERE employee_id IS NOT NULL GROUP BY 1),
         v AS (SELECT employee_id, sum(amount) va FROM read_parquet('{C}/voids.parquet') GROUP BY 1),
@@ -245,12 +305,14 @@ def c06():
         ax = f.add_axes([0.13 + k * 0.45, 0.14, 0.38, 0.64]); grid_x(ax)
         for i, (lab, vv, dd) in enumerate(groups):
             x = vv if k == 0 else dd; yy = 3 - i + rng.uniform(-0.22, 0.22, len(x))
-            ax.scatter(x, yy, s=10 if lab == "Employee" else 26, color=GRAY_D, alpha=0.35 if lab == "Employee" else 0.8, lw=0)
+            keep = st_ids != 80 if lab == "Store" else np.ones(len(x), bool)   # Munster is drawn once, in blue
+            ax.scatter(x[keep], yy[keep], s=10 if lab == "Employee" else 26, color=GRAY_D, alpha=0.35 if lab == "Employee" else 0.8, lw=0)
             ax.text(xmax * 0.995, 3 - i + 0.33, f"range {x.min():.1f}–{x.max():.1f}%", ha="right", fontsize=10.5, color=INK2)
         mx = mun[1] * 100 if k == 0 else mun[2] * 100
         ax.scatter([mx], [1], s=70, color=BLUE, zorder=5, edgecolor="white", lw=1.5)
         ax.annotate("Munster", (mx, 1), xytext=(6, -14), textcoords="offset points", fontsize=11, color=BLUE, fontweight="bold")
-        ax.set_xlim(0, xmax); ax.set_ylim(-0.6, 3.6); ax.xaxis.set_major_formatter(mt.PercentFormatter(decimals=0))
+        ax.set_xlim(0, xmax); ax.set_ylim(-0.6, 3.6); ax.xaxis.set_major_locator(mt.MultipleLocator(1 if k == 0 else 5))
+        ax.xaxis.set_major_formatter(mt.PercentFormatter(decimals=0))
         ax.set_yticks([3, 2, 1, 0], [g[0] for g in groups] if k == 0 else [""] * 4, fontsize=12.5, color=INK)
         ax.tick_params(axis="y", length=0); ax.spines["left"].set_visible(False)
         ax.set_title(title, loc="left", fontsize=12.5, color=INK, pad=10)
@@ -345,7 +407,7 @@ def c10():
     c_v = [next(r[2] for r in rows if r[0] == m and not r[1]) for m in months]
     ratio = np.mean(np.array(m_v) / np.array(c_v))
     f = fig(f"Munster's void rate is high every month, about {ratio:.1f}× the other stores",
-            "Voids as % of gross sales, by month. *April has 3 days and August 20 (Munster was offline Aug 11–17 with 3 nearby stores).")
+            "Voids as % of gross sales, by month. *April has 3 days and August 20 (Munster had no data Aug 12–17, like 3 nearby stores).")
     ax = f.add_axes([0.08, 0.14, 0.86, 0.66]); grid_y(ax)
     x = np.arange(len(months)); w = 0.36
     ax.bar(x - w / 2, c_v, width=w, color=GRAY, label="Other 126 stores")
@@ -358,6 +420,58 @@ def c10():
     ax.legend(loc="upper left", frameon=False, fontsize=11.5)
     save(f, "10_munster_by_month.png")
 
-ALL = {"01": c01, "02": c02, "03": c03, "04": c04, "05": c05, "06": c06, "07": c07, "08": c08, "09": c09, "10": c10}
+# ================================================================= 11 risk signals stack up (relationships)
+def c11():
+    con.execute(f"""CREATE OR REPLACE TEMP TABLE emp_rates AS
+    WITH s AS (SELECT employee_id, any_value(location_id) store, sum(gross_price*quantity) gross, count(DISTINCT (dt,location_id,check_id)) n_rec
+               FROM read_parquet('{C}/items.parquet') WHERE employee_id IS NOT NULL GROUP BY 1),
+    v AS (SELECT employee_id, sum(amount) void_amt FROM read_parquet('{C}/voids.parquet') GROUP BY 1),
+    d AS (SELECT employee_id, sum(amount) disc_amt, count(DISTINCT (dt,location_id,check_id)) FILTER (WHERE is_walkout AND amount>0) n_walk
+          FROM read_parquet('{C}/discounts.parquet') GROUP BY 1),
+    p AS (SELECT employee_id, sum(amount) FILTER (WHERE method_group='Cash') cash, sum(amount) FILTER (WHERE amount>0) paid,
+                 count(*) FILTER (WHERE method_group='Card') n_card, count(*) FILTER (WHERE is_tip_over_bill AND method_group='Card') n_tipover
+          FROM read_parquet('{C}/payments.parquet') GROUP BY 1),
+    k AS (SELECT i.employee_id, count(*) n_comp FROM (SELECT DISTINCT dt,location_id,check_id,employee_id FROM read_parquet('{C}/items.parquet') WHERE employee_id IS NOT NULL) i
+          JOIN (SELECT dt,location_id,check_id FROM {CK} WHERE is_fully_comped) c USING (dt,location_id,check_id) GROUP BY 1)
+    SELECT s.employee_id, s.store, coalesce(void_amt,0)/gross AS void_rate, coalesce(disc_amt,0)/gross AS disc_rate,
+           coalesce(n_walk,0)*1.0/n_rec AS walk_rate, coalesce(n_comp,0)*1.0/n_rec AS comp_rate,
+           coalesce(cash,0)/nullif(paid,0) AS cash_share, coalesce(n_tipover,0)*1.0/nullif(n_card,0) AS tipover_rate
+    FROM s LEFT JOIN v USING (employee_id) LEFT JOIN d USING (employee_id) LEFT JOIN p USING (employee_id) LEFT JOIN k USING (employee_id)
+    WHERE gross >= 5000 AND n_card >= 50""")
+    con.execute("""CREATE OR REPLACE TEMP TABLE emp_top AS SELECT *,
+        ntile(10) OVER (ORDER BY void_rate DESC)=1 tv, ntile(10) OVER (ORDER BY disc_rate DESC)=1 td, ntile(10) OVER (ORDER BY walk_rate DESC)=1 tw,
+        ntile(10) OVER (ORDER BY comp_rate DESC)=1 tc, ntile(10) OVER (ORDER BY cash_share DESC)=1 tcash, ntile(10) OVER (ORDER BY tipover_rate DESC)=1 tt
+        FROM emp_rates""")
+    n = q("SELECT count(*) FROM emp_top")[0][0]
+    over = [(lab, q(f"SELECT avg({col}::INT) FILTER (WHERE tv) * 100 FROM emp_top")[0][0]) for lab, col in
+            [("Walkout rate", "tw"), ("Discount rate", "td"), ("Cash share", "tcash"), ("Comp rate", "tc"), ("Card tips over the bill", "tt")]]
+    k3 = q("SELECT count(*) FILTER (WHERE tv::INT + td::INT + tw::INT + tc::INT + tt::INT >= 3) FROM emp_top")[0][0]
+    p = 0.1; exp3 = n * sum(__import__("math").comb(5, k) * p**k * (1-p)**(5-k) for k in (3, 4, 5))
+    f = fig("Risk signals stack up on the same employees",
+            f"{n:,} employees with $5K+ in sales and 50+ card payments. Every signal is a rate, so busy employees are not favored.")
+    ax = f.add_axes([0.22, 0.19, 0.36, 0.56]); grid_x(ax)
+    y = np.arange(len(over))[::-1]
+    for yi, (lab, v) in zip(y, over):
+        col = BLUE if v >= 15 else GRAY
+        ax.barh(yi, v, height=0.56, color=col)
+        ax.text(v + 0.8, yi, f"{v:.0f}%", va="center", fontsize=12.5, color=INK, fontweight="bold" if col == BLUE else "normal")
+    ax.axvline(10, color=INK2, lw=1.2, ls="--")
+    ax.set_ylim(-0.6, len(over) - 0.1)
+    ax.text(10.6, len(over) - 0.45, "10% if unrelated", fontsize=10.5, color=INK2, va="center")
+    ax.set_yticks(y, [o[0] for o in over], fontsize=12, color=INK); ax.tick_params(axis="y", length=0); ax.spines["left"].set_visible(False)
+    ax.set_xlim(0, 34); ax.xaxis.set_major_formatter(mt.PercentFormatter(decimals=0))
+    ax.set_title("Of the top 10% voiders, share who are also\nin the top 10% for…", loc="left", fontsize=12.5, color=INK, pad=10)
+    ax2 = f.add_axes([0.68, 0.19, 0.27, 0.56]); grid_y(ax2)
+    ax2.bar([0], [exp3], width=0.55, color=GRAY); ax2.bar([1], [k3], width=0.55, color=BLUE)
+    ax2.text(0, exp3 + 3, f"~{exp3:.0f}", ha="center", fontsize=13, color=INK2)
+    ax2.text(1, k3 + 3, f"{k3}", ha="center", fontsize=15, color=BLUE, fontweight="bold")
+    ax2.set_xticks([0, 1], ["Expected\nby chance", "Actual"], fontsize=12, color=INK); ax2.tick_params(axis="x", length=0)
+    ax2.set_ylim(0, k3 * 1.25); ax2.set_ylabel("Employees", fontsize=11.5)
+    ax2.set_title(f"Top 10% on 3+ of 5 signals at once:\n{k3/exp3:.0f}× more employees than chance", loc="left", fontsize=12.5, color=INK, pad=10)
+    f.text(0.045, 0.058, "Signals: void rate, discount rate, walkouts per receipt, comp rate, card tips over the bill.\n"
+           "Job roles are unknown, so some overlap (e.g. cash and voids) may come from the role, not the behavior.", fontsize=10, color=INK2, linespacing=1.4)
+    save(f, "11_signals_stack_up.png")
+
+ALL = {"00": c00, "01": c01, "02": c02, "03": c03, "04": c04, "05": c05, "06": c06, "07": c07, "08": c08, "09": c09, "10": c10, "11": c11}
 for k in (sys.argv[1:] or ALL):
     ALL[k]()

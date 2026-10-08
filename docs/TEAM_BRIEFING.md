@@ -1,13 +1,13 @@
 # Team Briefing: Applebee's EDA
 
-Read time: about 7 minutes. **Presentation: tomorrow, Thu Oct 8. Form already submitted.**
+Read time: about 7 minutes. **Presentation: Thu Oct 8. Form already submitted. Analysis finished; deck and presentation handed off.**
 
 ## TL;DR
 
 - We have the full dataset: 115 days of receipts from 127 Applebee's restaurants, about 2.1 million receipts and $99M collected.
 - It's already loaded and cleaned into a format we can analyze in seconds with Python. Nobody needs to touch the raw 11 GB files.
 - Our main finding: void and discount rates are almost identical on every day and at every hour, but they vary up to 7× between stores and employees. **Risk is about who and where, not when.**
-- Tomorrow we present a 5-minute EDA, with one presenter. Cleaning is done. We still need the cleaning visuals, about 6 charts, then the deck and script.
+- We present a 5-minute EDA with one presenter. Cleaning, analysis and all 12 charts are done. Other teammates build the 11-slide deck and present it, using a deck guide and a presenter guide that Santiago shares separately (they're not in the repo).
 - **To get the data on your laptop, follow `README.md` at the repo root, step by step.**
 
 ## What the data is
@@ -79,22 +79,24 @@ Each lever below has an honest use and a theft version.
    - The **top 5% of employees account for 39% of walked-out receipts**, 20% of void dollars and 21% of discount dollars.
    - The median server voids 0.77% of their sales; the top 1% void more than 4.2%.
    - Store void rates range from 0.32% to 2.29%.
-5. **Munster (store 80)** has the highest void rate in the chain, about 2.3% against a chain average of 0.83%, and it's high in every month. It also has the most comped receipts. Its missing days in mid-August are shared with 3 nearby Indiana stores, so that part looks like a regional outage, not anything suspicious.
+5. **The signals stack up on the same people.** Employees in the top 10% for voids are 2.7× as likely to also be top 10% for walkouts and 2.6× for discounts. 106 employees are in the top 10% on 3+ of 5 signals, against about 22 by chance.
+6. **Munster (store 80)** has the highest void rate in the chain, 2.29% against a chain median of 0.80% (2.9×), and it's high in every month. It also has one of the highest shares of fully comped receipts (4.96%, 4th of 127). Its missing days in mid-August are shared with 3 nearby Indiana stores, so that part looks like a regional outage, not anything suspicious.
 
-**Rule for the presentation:** the data has no fraud labels, so we say "risk signals" and "anomalies", never "fraud". We never show employee names, only IDs.
+**Rule for the presentation:** the data has no fraud labels, so we say "risk signals" and "anomalies", never "fraud" as a finding. No employee names anywhere, and no employee IDs on slides.
 
 ## Data problems we found (and what we do about them)
 
 | Problem | Decision |
 |---|---|
 | Receipt numbers repeat across stores | Identify a receipt by date + store + receipt number |
-| 2 empty columns (loyalty ID, service charge) | Drop them |
+| 3 fields that were always empty (loyalty ID and service charge on receipts, IsEmancipated in the HR file) | Dropped |
 | 20 store-days missing across 7 stores | Keep the stores and compare per open day |
 | 1,800 look-alike groups (3,774 receipts) that look identical from the outside | Checked inside: 3,545 receipts are split bills (kept); 229 are exact copies worth $73 in total (removed) |
 | Split bills look like duplicates and give fractional guest counts (0.5, 0.67) | Legitimate; keep them |
 | Weird receipts: a $0 receipt with 5,120 lines, receipts open more than 6 hours, real refunds | Flag them; don't delete. In fraud work, outliers are the signal. 42,291 receipts (2%) carry at least one flag. |
 | Typos in labels ("SERV ERR" vs "SERVER ERR") | Merge into one label |
-| The HR file has names and birth dates, and no explanation of job IDs | Use IDs only; ask the organizers |
+| The HR file has names, birth dates and payroll IDs, and no explanation of job IDs | Removed the personal data; use IDs only; ask the organizers about job IDs |
+| 9 receipts numbered outside the normal range | Flagged. 3 are card refunds with no original sale (2 by the same employee), a risk signal worth mentioning |
 
 ## How to open the data yourself
 
@@ -114,23 +116,31 @@ items = pd.read_parquet("eda_work/clean/items.parquet", columns=["location_id", 
 
 The key to join tables is `dt` + `location_id` + `check_id`.
 
-## The 5-minute story (draft)
+## The 5-minute story (final: 11 slides, 4:50)
 
-1. **Context:** 127 stores, 115 days, 2.1M receipts. Where can money leak at the register?
-2. **Understanding:** how a receipt works, and proof that 99.996% balance.
-3. **Cleaning:** 11 GB of nested JSON became 7 clean tables; what we fixed and what we flagged.
-4. **Baseline:** sales follow the week, but the void rate stays flat.
-5. **Levers:** $3M in discounts and $726K in voids, and 5% of employees drive 39% of walked-out receipts.
-6. **Stores:** up to a 7× difference; Munster voids nearly 3× the average.
-7. **Takeaway:** risk is about who and where, so in Phase 2 we score employees and stores.
+| # | Slide | Chart |
+|---|---|---|
+| 1 | Context: 127 stores, 115 days, 2.1M receipts, $99.3M. Where can money leak at the register? | KPI strip |
+| 2 | Every detail links back to one receipt | `00_data_model` |
+| 3 | Every receipt balances: 99.996% to the cent | `03_check_waterfall` |
+| 4 | Only 229 receipts removed; 2% flagged and kept | `02_cleaning_funnel` |
+| 5 | Only 3 fields were always empty; data types fixed | `01_missing_values` |
+| 6 | Sales peak on weekends and holidays, and drift down 18% | `04_daily_trend` |
+| 7 | **Voids and discounts depend on where and who, not when** | `06_who_where_not_when` |
+| 8 | 5% of employees account for 39% of walked-out receipts | `08_concentration_curve` |
+| 9 | Risk signals stack up on the same employees (106 vs ~22) | `11_signals_stack_up` |
+| 10 | Munster voids 2.9× the chain median | `09_store_scatter` |
+| 11 | Risk is about who and where, not when → Phase 2 risk score | Takeaways |
 
-## What's left before tomorrow
+Appendix for questions: the hour heatmap (`05`), discount and void reasons (`07`), Munster by month (`10`), a glossary, the cleaning table and method notes.
 
-- [x] Finish the clean tables and settle the possible duplicates (done: `eda_work/clean/`)
+## What's left
+
+- [x] Clean tables and duplicates settled (`eda_work/clean/`)
 - [x] Repo ready for the team: `README.md`, one-command rebuild, setup checker
-- [x] Cleaning visuals and all analysis charts: 10 PNGs in `eda_work/charts/` (list and suggested slide for each in `EDA_PLAN.md`, section "Charts")
-- [ ] Team picks which charts go in the deck
-- [ ] Build the 7-slide deck and write the script (about 650 words)
-- [ ] Do 2 timed run-throughs, staying under 4:45
+- [x] All 12 charts in `eda_work/charts/`
+- [x] Storyboard, deck guide and presenter guide (shared by Santiago in chat, not in the repo)
+- [ ] Deck builder: build the 11 slides + appendix from the deck guide, using the full-size PNGs; export a PDF backup
+- [ ] Presenter: prepare from the presenter guide; 2 timed run-throughs at 4:45 or under
 
-More detail: `EDA_PLAN.md` (tasks, storyboard, status) and `EDA_LEARNINGS.md` (every number and finding).
+More detail: `EDA_PLAN.md` (storyboard, decisions, status) and `EDA_LEARNINGS.md` (every number, finding and method).

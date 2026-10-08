@@ -1,7 +1,14 @@
 # Applebee's Dataset: Everything We've Learned
 
-Phase 1 (EDA) · profiled and cleaned Oct 7, 2026 · all 115 days, every row
+Phase 1 (EDA) · profiled and cleaned Oct 7, 2026 · updated Oct 8 · all 115 days, every row
 Numbers come from queries over the full dataset, not a sample.
+
+**The story in four sentences** (what the presentation argues):
+
+1. **The data is understood and trustworthy:** 2.1M receipts from 127 stores over 115 days, and 99.996% balance to the cent.
+2. **It was cleaned without losing evidence:** only 229 exact copies removed; 2% of receipts flagged and kept, because in fraud work outliers are the signal.
+3. **Risk is about who and where, not when:** void and discount rates barely move by hour or weekday, but vary about 7× between stores and far more between employees.
+4. **The signals stack up on the same people:** 106 employees are top 10% on 3+ of 5 signals, about 5× chance. Phase 2 turns this into a risk score.
 
 ---
 
@@ -95,7 +102,7 @@ This holds for **2,142,768 of 2,142,846 checks (99.996%)**. That proves we read 
 
 | Measure | Amount |
 |---|---|
-| Gross (menu price × quantity) | $87.07M |
+| Menu prices (sum of GrossPrice per line; the waterfall's first bar) | $87.32M |
 | Item discounts | $1.07M |
 | Item sales (SoldPrice) | $86.25M |
 | Check discounts | $1.95M |
@@ -103,6 +110,8 @@ This holds for **2,142,768 of 2,142,846 checks (99.996%)**. That proves we read 
 | Tips | $8.83M |
 | Total collected (payments) | $99.29M |
 | Voided (removed, never charged) | $0.73M |
+
+Menu prices − item discounts = item sales exactly ($87.32M − $1.07M = $86.25M), because the receipt math works on line prices. Multiplying GrossPrice by quantity gives a slightly lower $87.07M, since some lines have quantity 0 but still carry a price (see `flag_zero_qty_priced`). Net sales (item sales − check discounts) are $84.29M.
 
 ## 6. The flattened tables (what we built)
 
@@ -187,7 +196,7 @@ Rule for a modifier: a child line (`parent_seq > 0`) with a $0 price. Don't use 
 | Voids | 178,303 lines on 55,120 checks | $726K | Customer pays cash, server voids an item afterward and keeps the difference |
 | Walkouts | 2,345 receipts (27,306 discount lines: every item on the receipt gets its own WALKOUT line) | $93K | Customer paid cash, server records a walkout and keeps the cash |
 | Self-approved voids and discounts | 5,866 events | $32.9K | Skips the manager check |
-| Refunds | 15 payments | $151 | Fake refunds. The other 3,764 negative payments are gift-card sales ("GC Sold"), which the register books as negative. |
+| Refunds | 15 payments | $151 | Fake refunds. 3 card refunds ($79.50) were posted as standalone receipts numbered −1, with no items and no original sale: 1 at Topeka, 2 at Warsaw by the same employee. The other 12 are small cash corrections (mostly under $10). The other 3,764 negative payments are gift-card sales ("GC Sold"), which the register books as negative. |
 | Unbalanced checks | 78 checks | about $1K net | Errors or manipulation |
 | Card tips above 100% of the bill | 11,744 payments | not yet measured | Tip padding: server raises the tip after the customer signs |
 
@@ -254,8 +263,38 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 
 - It has the highest void rate in the chain: 2.28% before August, against 0.83% for the rest of the chain.
 - That rate is consistent every month: Apr 2.0%, May 2.53%, Jun 1.68%, Jul 2.61%, Aug 2.39%.
-- It also has the highest share of fully comped checks (4.96%), 37 walked-out receipts, and 3 of the 8 highest-void employees with $10K+ in sales (161078, 161205, 159512).
-- Its data gap on Aug 11–17 is NOT suspicious. Merrillville (77), Portage (82) and Valparaiso (86), all Northwest Indiana, have gaps on the same days, which points to a regional outage or weather.
+- It also has a high share of fully comped checks (4.96%, 4th of 127 stores after Ireland Road 6.11%, Crestwood 5.95% and Morse Road 5.36%), 37 walked-out receipts, and 3 of the 8 highest-void employees with $10K+ in sales (161078, 161205, 159512).
+- Its data gap (no receipts Aug 12–17) is NOT suspicious. Merrillville (77), Portage (82) and Valparaiso (86), all Northwest Indiana, have gaps in the same week (Aug 11–17), which points to a regional outage or weather.
+
+**Relationships: the risk signals stack up on the same employees** (2,516 employees with $5K+ sales and 50+ card payments; every signal is a rate):
+
+- **Top-10% overlap:** of the top 10% voiders, the share also in the top 10% for walkout rate is 27%, for discount rate 26%, for cash share 19%, for comp rate 13%, and for card tips over the bill 10%. If the signals were unrelated, each would be 10%.
+- **Stacking:** 106 employees are in the top 10% on 3 or more of 5 signals (void, discount, walkout, comp, tips over the bill). Unrelated signals would give about 22, so this is 5× chance.
+- **Where they work:** those employees cluster in Ireland Road (84) and Munster (80) with 8 each, Morse Road (174) with 7, Brice Road (155) with 6, and store 167 and Corpus Christi (39) with 4 each.
+- **Rank correlations (Spearman):**
+
+  | Pair | Correlation |
+  |---|---|
+  | Void rate – cash share | 0.32 |
+  | Discount rate – walkout rate | 0.30 |
+  | Void rate – discount rate | 0.25 |
+  | Discount rate – comp rate | 0.68 (expected: a comp is a 100% discount) |
+
+- **Tips:** card tips over the bill are unrelated to the other signals, so most are probably generous customers, not tip padding.
+- **Caveat:** job roles are unknown (no lookup for job IDs), so some overlap, like cash and voids, may come from role (bartenders) rather than behavior.
+
+**How the employees were compared** (the method behind charts 06, 08 and 11):
+
+| Chart | Employees | Rule |
+|---|---|---|
+| 08 concentration curve | 3,183 | Everyone who rang a sale (employee_id 0 = system, excluded). It shows shares of totals, so small sellers can't distort it. |
+| 06 who/where, not when | 2,522 | $5,000+ in sales over the 115 days. Below that, rates are noise (one $30 void on $300 of sales = a 10% void rate). The median employee sold $20.7K, so the cutoff mainly drops trainees, short stints and managers who rarely ring. |
+| 11 signals stack up | 2,516 | $5,000+ in sales and 50+ card payments, so the tip signal means something |
+
+- **Every signal is a rate:** void $ ÷ gross sales, discount $ ÷ gross sales, walked-out receipts per receipt, fully comped receipts per receipt, cash share of payments, card tips over the bill per card payment. Busy employees don't look worse just for being busy.
+- **Attribution:** voids and discounts count against the employee who entered them, not the approving manager (a separate field, which is how self-approvals were found).
+- **Top 10%:** rank all 2,516 on each rate separately and take the highest 252.
+- **Expected by chance:** if the 5 signals (void, discount, walkout, comp, tips over the bill) were unrelated, the chance of being top 10% on 3 or more is 10·0.1³·0.9² + 5·0.1⁴·0.9 + 0.1⁵ ≈ 0.86%, and 0.86% × 2,516 ≈ 22. Observed: 106.
 
 **HR flag:** 1,020 employees marked `Deleted` in the HR file still rang 14.6% of sales during the period. Most likely they left after August, which is worth comparing against their risk metrics.
 
@@ -265,10 +304,11 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 |---|---|---|
 | Nested single-line JSON | 63–168 MB per day | Flattened into Parquet (done) |
 | Schema drift | Voids Quantity is decimal on 05-08, 05-23, 07-15, 08-05 and 08-12. ItemsSold Quantity is integer on 05-25 and 06-29. Check Id is 128-bit on 05-19, 07-03 and 07-20. | Fixed types on conversion (done) |
-| check_id not unique | 2,100,502 distinct (date, check_id) pairs vs 2,142,846 rows. 3 ids ≤ 0, 6 ids > 10M. | Composite key (done) |
+| check_id not unique | 2,100,502 distinct (date, check_id) pairs vs 2,142,846 rows | Composite key (done) |
+| Odd receipt numbers | Normal numbers run 1 to ~2.4M. 9 fall outside, all at Topeka and Warsaw: 3 numbered −1 (card refunds with no items, see Refunds) and 6 above 1 billion (normal meals, likely a backup register) | Keep and flag (`flag_odd_check_id`) |
 | Text timestamps | Minute precision, no seconds | Parse to datetime |
 | Negative tip | Gratuity totals −$8.83M | Flip the sign into `tip` |
-| Empty columns | loyalty_id is 100% null, service_charge is 100% zero | Drop |
+| Empty columns | Receipts: loyalty_id 100% empty, service_charge always $0. Employees: IsEmancipated 100% empty | Dropped all 3 (done) |
 | Missing store-days | 20 store-days over 7 stores: Munster (80) Aug 12–17, Portage (82) Aug 11–15, Crestview Hills (113) Jul 2–4, Kearney (23) Apr 28–29, Valparaiso (86) Aug 11–12, Merrillville (77) Aug 11, Dayton (157) Aug 19 | Keep, normalize per open day |
 | Time zone field | 108 Central, 18 Phoenix, 1 Eastern, even though Ohio stores should be Eastern | Ignore it; times are local |
 | HR gaps | 9,184 missing birth dates, 5,351 missing hire dates, 3,134 with no job IDs, 37 job IDs with no names. employee_id 0 on 3,283 item lines. | Treat 0 as system; ask the organizers |
@@ -285,7 +325,7 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 | Duplicate labels | SERV ERR/SERVER ERR, NOT RECVD/NOT RECEVD, Postmates/POSTMATES, Pride/PRIDE, 1.5 OZ RANCH/1.5OZ RANCH | Normalize |
 | Item names | 66 item names differ between items.json and the sales files; 5,329 of 16,697 menu items are used | Use the names from the sales files |
 | Generic tax names | "Tax Category 1/2" | Leave as is |
-| Privacy | Full names and birth dates in employees.json | Show IDs only |
+| Privacy | Full names, birth dates and payroll IDs in employees.json | Dropped from `clean/employees.parquet`; show IDs only (done) |
 
 ## 12. Cleaning results (step 1, done Oct 7)
 
@@ -350,24 +390,31 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
   - `is_refund` and `is_tip_over_bill` flags.
 - **Channels:** `channel_group` is one of Dine-in 1.65M, Delivery app 254K, Online order 142K, To go 95K, Catering 644, Other 317.
 - **Columns:** the checks table now has 53 columns. Times are parsed, and it includes open hour, weekday, duration, store name, channel, money totals and all the flags.
-- **Employees:** `clean/employees.parquet` has no names, birth dates or payroll IDs.
+- **Employees:** `clean/employees.parquet` has no names, birth dates, payroll IDs or `IsEmancipated`.
+- **Dropped columns** (also listed in `reports/cleaning_summary.json`): receipts' `loyalty_id` and `service_charge`, employees' `IsEmancipated` (all always empty), plus employee names, birth dates and payroll IDs (privacy).
 - **Reports:** `reports/missing_values.csv` (null and zero % for every column), `reports/cleaning_summary.json` (the funnel and flag counts) and `reports/label_merges.csv`.
 - **Check:** the balance check still holds on the clean data: 2,142,539 of 2,142,617 receipts, with the same 78 exceptions.
 
-## 13. Charts (steps 3 and 4, done Oct 7)
+## 13. Charts and the presentation (done Oct 7–8)
 
-| Chart (`eda_work/charts/`) | What it shows | Slide |
+12 charts in `eda_work/charts/` (2400 × 1350 px), in the order they appear in the 11-slide deck. The full storyboard, appendix and cut order are in `EDA_PLAN.md`; the deck builder and presenter also have their own guides (shared in chat, not in the repo).
+
+| Slide | Chart (`eda_work/charts/`) | What it shows |
 |---|---|---|
-| `01_missing_values.png` | 104 of 109 columns complete; the 2 empty ones dropped | 3 (cleaning) |
-| `02_cleaning_funnel.png` | 229 receipts removed, 2% flagged and kept, and why | 3 (cleaning) |
-| `03_check_waterfall.png` | $87.32M menu prices → $99.29M collected; 99.996% of receipts balance | 2 (understanding) |
-| `04_daily_trend.png` | Weekly rhythm, Mother's/Father's Day peaks, −18% per store-day by August | 4 (baseline) |
-| `05_weekday_hour_heatmap.png` | Friday 6 PM is the busiest hour; dinner peaks every day | 4 (baseline) or appendix |
-| `06_who_where_not_when.png` | Void/discount rates flat by hour and weekday, wide by store and employee | 4 or 5 (core insight) |
-| `07_discounts_and_voids.png` | Manager comps top discounts ($3.02M); order changes top voids ($0.73M) | 5 (levers) |
-| `08_concentration_curve.png` | 5% of employees → 39% of walked-out receipts, 20% of void $, 21% of discount $ | 5 (levers) |
-| `09_store_scatter.png` | Munster voids 2.9× the chain median | 6 (stores) |
-| `10_munster_by_month.png` | Munster is high every month, about 2.8× the other stores | 6 (stores) or appendix |
+| 1 | — (KPI strip) | 127 stores · 115 days · 2.1M receipts · $99.3M collected; where can money leak at the register? |
+| 2 | `00_data_model.png` | Every detail table links to one receipt (date + store + receipt #); 4 lookup tables turn IDs into names |
+| 3 | `03_check_waterfall.png` | $87.32M menu prices → $99.29M collected; 99.996% of receipts balance |
+| 4 | `02_cleaning_funnel.png` | 229 receipts removed, 2% flagged and kept, and why |
+| 5 | `01_missing_values.png` | Only 3 fields were always empty (loyalty_id, service_charge, IsEmancipated) and were dropped; ClosedDate is empty only for open stores |
+| 6 | `04_daily_trend.png` | Weekly rhythm, Mother's/Father's Day peaks, −18% per store-day by August |
+| 7 | `06_who_where_not_when.png` | Void/discount rates flat by hour and weekday, wide by store and employee (the core insight) |
+| 8 | `08_concentration_curve.png` | 5% of employees → 39% of walked-out receipts, 20% of void $, 21% of discount $ |
+| 9 | `11_signals_stack_up.png` | Top-10% voiders are 2.7× as likely to be top-10% for walkouts, 2.6× for discounts; 106 employees are top 10% on 3+ of 5 signals (~22 by chance) |
+| 10 | `09_store_scatter.png` | Munster voids 2.9× the chain median |
+| 11 | — (takeaway) | Risk is about who and where, not when → Phase 2 risk score |
+| A1 | `05_weekday_hour_heatmap.png` | Friday 6 PM is the busiest hour; dinner peaks every day |
+| A2 | `07_discounts_and_voids.png` | Manager comps top discounts ($3.02M); order changes top voids ($0.73M) |
+| A3 | `10_munster_by_month.png` | Munster is high every month, about 2.8× the other stores |
 
 Rebuild all charts with `python eda_work/scripts/charts.py` (about 5 seconds), or one chart with e.g. `python eda_work/scripts/charts.py 06`.
 
@@ -375,13 +422,14 @@ The charts use one style: gray data, one blue accent on what the title is about,
 
 ## 14. Technical reference
 
-- **Location:** `Databricks_challenge/eda_work/` on Santiago's Mac. Use `clean/` for analysis; `parquet/` is the raw flattened copy.
+- **Location:** `eda_work/` in the repo (`databricks-challenge`). Use `clean/` for analysis; `parquet/` is the raw flattened copy. Data folders are gitignored; see `README.md` to get them.
   - `parquet/<table>/<date>.parquet`: the 7 tables, plus `parquet/check_summary/check_summary.parquet`.
   - `scripts/build_all.py`: rebuilds everything in one command (convert → check summary → clean), about 4–6 minutes from scratch. Tested: a rebuild reproduces identical rows and reports.
   - `scripts/check_setup.py`: checks Python, libraries, raw data and built tables, and says what to fix.
   - `scripts/convert.py`: JSON → Parquet for all days (about 1–3 s per day).
   - `scripts/build_check_summary.py`: one row per receipt with its totals.
   - `scripts/clean.py`: builds `clean/` and `reports/`.
+  - `scripts/charts.py`: builds the 12 PNGs in `charts/`.
   - `scripts/dup_check.py`: the duplicate analysis.
   - `scripts/q.py`: registers the raw tables for DuckDB SQL (used by `p1`–`p12`, `e1`–`e3`).
   - Setup for teammates: `README.md` at the repo root.
