@@ -12,13 +12,15 @@ This repo holds our code and docs. **The data is not in git.** You add it yourse
 
 ```
 databricks-challenge/                  <- the repo (git clone creates this folder)
+├── CLAUDE.md                          <- context for AI assistants (Claude)
 ├── README.md                          <- this guide
 ├── requirements.txt                   <- Python libraries to install
 ├── .gitignore                         <- keeps data and your virtual environment out of git
 ├── docs/
 │   ├── TEAM_BRIEFING.md               <- start here
-│   ├── EDA_PLAN.md                    <- tasks, 5-minute storyboard, roles
-│   └── EDA_LEARNINGS.md               <- every number and finding so far
+│   ├── EDA_PLAN.md                    <- tasks, 5-minute storyboard, decisions
+│   ├── EDA_LEARNINGS.md               <- every number and finding so far
+│   └── DECK_GUIDE.md                  <- Phase 1 deck plan (charts embedded)
 ├── eda_work/
 │   ├── scripts/                       <- all the code (see "Scripts" below)
 │   ├── reports/                       <- small cleaning reports (these ARE in git)

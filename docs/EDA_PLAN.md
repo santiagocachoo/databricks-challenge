@@ -1,7 +1,8 @@
 # Applebee's EDA Plan (Phase 1)
 
 Tec de Monterrey x Sun Holdings x Databricks Data Challenge · Applebee's AI-Powered Fraud Detection track
-Last updated: Oct 8, 2026 · Live team version: https://claude.ai/code/artifact/3d05aa74-0b24-476f-b645-4fb429df27ca
+**Status: Phase 1 complete. The EDA was presented on Thu Oct 8, 2026.** Next: Phase 2 (brief pending).
+Last updated: Oct 8, 2026, after the presentation · Live team version: https://claude.ai/code/artifact/3d05aa74-0b24-476f-b645-4fb429df27ca
 
 ## Goal
 
@@ -15,24 +16,24 @@ Present a 5-minute exploratory data analysis (EDA), with one presenter, that sco
 
 The organizers' structure is: quick dataset overview, key cleaning steps, top patterns, clear visuals, and a strong conclusion.
 
-## Where things stand (Oct 8)
+## Where things stand (after Oct 8)
 
-**The analysis is finished and handed off.** Other teammates build the deck and present it. They work from:
+Phase 1 is done: the team presented the EDA on Oct 8. Everything Phase 1 produced is in the repo:
 
 | What | Where |
 |---|---|
 | 12 finished charts, full size (2400 × 1350 px, 16:9) | `eda_work/charts/` in this repo |
-| Deck guide: the 11-slide plan, which chart goes where, design rules, appendix, cut order | `DECK_GUIDE.md`, shared in chat (not in the repo) |
-| Presenter guide: talking points per slide, numbers cheat sheet, method, framing rules, Q&A prep | `PRESENTER_GUIDE.md`, shared in chat (not in the repo) |
+| Deck guide: the 11-slide plan, which chart goes where, design rules, appendix, cut order | `docs/DECK_GUIDE.md` (charts embedded; 1.3 MB) |
 | Every number and finding | `docs/EDA_LEARNINGS.md` |
 | Quick catch-up | `docs/TEAM_BRIEFING.md` |
+| Context for AI assistants (start here in a new Claude session) | `CLAUDE.md` |
 
 ## Decisions
 
-- **Presentation is Thu Oct 8.** We ran P0 tasks only. The P1 tasks are now a backlog for Phase 2.
+- **Presentation was Thu Oct 8.** We ran P0 tasks only. The P1 tasks are now a backlog for Phase 2.
 - **Tooling:** Python, with DuckDB and pandas. Everyone analyzes the clean tables in `eda_work/clean/`. No Databricks notebook for Phase 1.
-- **Repo:** code and docs live in git; data never does. Teammates set up with `README.md`, and either get `clean.zip` from Santiago or rebuild with `python eda_work/scripts/build_all.py`.
-- **Deck and presentation:** built and delivered by other teammates, following the deck guide and presenter guide. The storyboard below is the same 11-slide plan.
+- **Repo:** code and docs live in git; data never does. Teammates set up with `README.md`, and either get `clean.zip` (shared by the team) or rebuild with `python eda_work/scripts/build_all.py`.
+- **Deck and presentation:** built from the deck guide. The storyboard below is the 11-slide plan we presented.
 - **Form and proof:** already submitted.
 - **Framing rule:** the data has no fraud labels. We say "risk signals" and "anomalies", never "fraud" as a finding. No employee names or IDs on slides.
 
@@ -46,8 +47,8 @@ The organizers' structure is: quick dataset overview, key cleaning steps, top pa
 | — | Repo: one-command rebuild (`build_all.py`), setup checker (`check_setup.py`), `README.md` for teammates | — | Done |
 | 3 | Cleaning visuals: missing-values chart and cleaning funnel (`01`, `02`) | T7, T8 | Done |
 | 4 | Analysis charts (`03`–`11`) and the data model diagram (`00`), one shared style, built by `charts.py` | T1, T2, T10–T15, T19, T20 | Done |
-| 5 | Storyboard, deck guide and presenter guide | T21 | Done, handed off |
-| 6 | Deck (11 slides + appendix), two timed rehearsals | T3, T22, T23 | Deck builder and presenter |
+| 5 | Storyboard and deck guide | T21 | Done |
+| 6 | Deck (11 slides + appendix), rehearsals, presentation | T3, T22, T23 | Done: presented Oct 8 |
 
 The full pipeline has been tested end to end: a rebuild reproduces the same rows and the same cleaning numbers.
 
@@ -60,7 +61,7 @@ P0 means needed for a 4/4 score. P1 means polish; the open P1 tasks are the Phas
 - [x] T0 (P0) Ingest and flatten all 115 days into Parquet, then profile every table.
 - [x] T1 (P0) Data model diagram: receipts in the middle, 5 detail tables and 4 lookup tables, with their keys and row counts (`charts/00_data_model.png`).
 - [x] T2 (P0) "Anatomy of a check" waterfall: menu prices $87.32M → item discounts → item sales $86.25M → check discounts → net sales $84.29M → tax → tips → $99.29M collected. It shows that 99.996% of receipts balance (`charts/03_check_waterfall.png`).
-- [ ] T3 (P0, deck builder) Context slide: 127 stores, 115 days, 2.1M receipts, $99.3M collected, and the business question. Specified in the deck guide, slide 1.
+- [x] T3 (P0) Context slide: 127 stores, 115 days, 2.1M receipts, $99.3M collected, and the business question. Specified in the deck guide, slide 1.
 - [ ] T4 (P1) Ask the organizers for the job ID lookup and what `Deleted` means in the employee file.
 
 ### 2. Data cleaning and preparation
@@ -91,9 +92,9 @@ P0 means needed for a 4/4 score. P1 means polish; the open P1 tasks are the Phas
 
 ### 5. Presentation and communication
 
-- [x] T21 (P0) Storyboard: 11 slides plus appendix (below), written up in the deck guide and presenter guide.
-- [ ] T22 (P0, deck builder) Build the deck from the deck guide, with a PDF backup.
-- [ ] T23 (P0, presenter) Prepare from the presenter guide, and do 2 timed run-throughs at 4:45 or under.
+- [x] T21 (P0) Storyboard: 11 slides plus appendix (below), written up in the deck guide.
+- [x] T22 (P0) Build the deck from the deck guide, with a PDF backup.
+- [x] T23 (P0) Rehearse with a timer (4:45 or under) and present. Presented Oct 8.
 - [x] T24 Form and proof submitted.
 - ~~T25 Databricks notebook~~ (dropped for Phase 1).
 
@@ -166,7 +167,7 @@ All in `eda_work/charts/`, 2400 × 1350 px. Rebuild all with `python eda_work/sc
 
 ## Notes for the script and Q&A
 
-The presenter guide covers these in full. The short versions:
+Short answers to the questions judges were likely to ask:
 
 - **Which employees we compared:**
   - Chart 08 uses everyone who rang up sales: 3,183 people, excluding "system" lines. It shows shares of totals, so small sellers can't distort it.
@@ -184,15 +185,10 @@ The presenter guide covers these in full. The short versions:
 - **"Why did sales drop 18%?"** The data doesn't say why. It's per store per day, so missing stores don't explain it, and our risk signals are rates, so it doesn't affect them.
 - **Role caveat:** job roles are unknown (the organizers gave no lookup for job IDs). Some overlap, like cash and voids, may come from the role (bartenders) rather than behavior.
 
-## Roles
-
-| Role | Owns | State |
-|---|---|---|
-| Analysis (Santiago) | Ingestion, clean layer, duplicates, charts, docs, deck guide, presenter guide | Done |
-| Deck builder | The 11-slide deck + appendix from the deck guide, PDF backup | Oct 8 |
-| Presenter | Preparation from the presenter guide, 2 timed run-throughs, the 5-minute talk and Q&A | Oct 8 |
-
 ## Phase 2 backlog
+
+The Phase 2 brief (dates, deliverables, rubric) isn't in the repo yet. Add it here when the organizers publish it.
+
 
 - Combine the signals (void, discount, walkout, comp, cash share, tips over the bill, self-approval) into one risk score per employee and per store.
 - Open P1 tasks: T4 (job ID lookup, `Deleted` meaning), T16 (manager–employee pairs), T17 (Munster deep dive), T18 (`Deleted` employees), T18b (tip padding).

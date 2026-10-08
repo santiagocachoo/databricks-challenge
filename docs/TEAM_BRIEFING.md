@@ -1,13 +1,13 @@
 # Team Briefing: Applebee's EDA
 
-Read time: about 7 minutes. **Presentation: Thu Oct 8. Form already submitted. Analysis finished; deck and presentation handed off.**
+Read time: about 7 minutes. **Phase 1 is complete: we presented the EDA on Thu Oct 8. Next up: Phase 2.**
 
 ## TL;DR
 
 - We have the full dataset: 115 days of receipts from 127 Applebee's restaurants, about 2.1 million receipts and $99M collected.
 - It's already loaded and cleaned into a format we can analyze in seconds with Python. Nobody needs to touch the raw 11 GB files.
 - Our main finding: void and discount rates are almost identical on every day and at every hour, but they vary up to 7× between stores and employees. **Risk is about who and where, not when.**
-- We present a 5-minute EDA with one presenter. Cleaning, analysis and all 12 charts are done. Other teammates build the 11-slide deck and present it, using a deck guide and a presenter guide that Santiago shares separately (they're not in the repo).
+- Phase 1 was a 5-minute EDA with one presenter, presented on Oct 8 with an 11-slide deck. The deck plan is in `docs/DECK_GUIDE.md`.
 - **To get the data on your laptop, follow `README.md` at the repo root, step by step.**
 
 ## What the data is
@@ -100,7 +100,7 @@ Each lever below has an honest use and a theft version.
 
 ## How to open the data yourself
 
-Setup is in `README.md`: clone the repo, create the Python environment, then either unzip `clean.zip` from Santiago (fastest) or rebuild with `python eda_work/scripts/build_all.py`. Check it worked with `python eda_work/scripts/check_setup.py`.
+Setup is in `README.md`: clone the repo, create the Python environment, then either unzip `clean.zip` (shared by the team; fastest) or rebuild with `python eda_work/scripts/build_all.py`. Check it worked with `python eda_work/scripts/check_setup.py`.
 
 The clean tables are in `eda_work/clean/`. Parquet is like CSV, but compressed and fast: the 11 GB became about 300 MB.
 
@@ -134,13 +134,13 @@ The key to join tables is `dt` + `location_id` + `check_id`.
 
 Appendix for questions: the hour heatmap (`05`), discount and void reasons (`07`), Munster by month (`10`), a glossary, the cleaning table and method notes.
 
-## What's left
+## Status and what's next
 
 - [x] Clean tables and duplicates settled (`eda_work/clean/`)
 - [x] Repo ready for the team: `README.md`, one-command rebuild, setup checker
 - [x] All 12 charts in `eda_work/charts/`
-- [x] Storyboard, deck guide and presenter guide (shared by Santiago in chat, not in the repo)
-- [ ] Deck builder: build the 11 slides + appendix from the deck guide, using the full-size PNGs; export a PDF backup
-- [ ] Presenter: prepare from the presenter guide; 2 timed run-throughs at 4:45 or under
+- [x] Storyboard and deck guide (`docs/DECK_GUIDE.md`)
+- [x] Deck built and presented on Oct 8
+- [ ] Phase 2: waiting for the organizers' brief. Our idea: combine the risk signals into one risk score per employee and per store (backlog in `EDA_PLAN.md`)
 
 More detail: `EDA_PLAN.md` (storyboard, decisions, status) and `EDA_LEARNINGS.md` (every number, finding and method).

@@ -1,6 +1,6 @@
 # Applebee's Dataset: Everything We've Learned
 
-Phase 1 (EDA) · profiled and cleaned Oct 7, 2026 · updated Oct 8 · all 115 days, every row
+Phase 1 (EDA) · profiled and cleaned Oct 7, 2026 · presented Oct 8 · all 115 days, every row
 Numbers come from queries over the full dataset, not a sample.
 
 **The story in four sentences** (what the presentation argues):
@@ -397,7 +397,7 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 
 ## 13. Charts and the presentation (done Oct 7–8)
 
-12 charts in `eda_work/charts/` (2400 × 1350 px), in the order they appear in the 11-slide deck. The full storyboard, appendix and cut order are in `EDA_PLAN.md`; the deck builder and presenter also have their own guides (shared in chat, not in the repo).
+12 charts in `eda_work/charts/` (2400 × 1350 px), in the order they appear in the 11-slide deck. The full storyboard, appendix and cut order are in `EDA_PLAN.md`, and the slide-by-slide deck plan is in `docs/DECK_GUIDE.md` (it embeds the charts).
 
 | Slide | Chart (`eda_work/charts/`) | What it shows |
 |---|---|---|

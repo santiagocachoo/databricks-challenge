@@ -1,6 +1,6 @@
 # Deck Guide: Applebee's EDA (Phase 1)
 
-**For:** whoever builds the slide deck · **Presentation:** Thu Oct 8, 2026 · 5 minutes max, one presenter
+**For:** building the slide deck · **Presentation:** Thu Oct 8, 2026 · 5 minutes max, one presenter
 **Team track:** Applebee's AI-Powered Fraud Detection · Tec de Monterrey × Sun Holdings × Databricks Data Challenge
 
 This guide tells you exactly what goes on each slide, which chart to use, and why. The previews below are reduced copies. **For the slides, use the full-size files** in the repo at `eda_work/charts/` (2400 × 1350 px, 16:9, white background).
@@ -52,7 +52,7 @@ The organizers' suggested structure is: dataset overview → cleaning → patter
 
 ## 3. Slide by slide (11 slides, 4:50 total)
 
-Times are cumulative. The presenter guide has the talking points for each slide.
+Times are cumulative.
 
 ### Slide 1 · Context (0:00–0:20)
 
