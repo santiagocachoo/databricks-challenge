@@ -63,29 +63,45 @@ money = lambda v: f"${v/1e6:,.2f}M"
 
 # ================================================================= 01 missing values (step 3)
 def c01():
-    rows = [  # (label, % empty, how it is empty, decision, accent?)
-        ("checks · loyalty_id", 100.0, "always empty", "Dropped: never filled", True),
-        ("checks · service_charge", 100.0, "always $0", "Dropped: always zero", True),
-        ("employees · IsEmancipated", 100.0, "always empty", "Not used", False),
-        ("stores · ClosedDate", 68.6, "empty", "Not missing: empty = store still open", False),
-        ("employees · DateOfBirth", 5.9, "empty", "Not used (personal data)", False),
-        ("employees · HireDate", 3.4, "empty", "Kept; gap noted", False),
+    n_chk = q(f"SELECT count(*) FROM {CK}")[0][0] + 229          # raw receipts (before removing exact copies)
+    n_emp = q(f"SELECT count(*) FROM read_parquet('{C}/employees.parquet')")[0][0]
+    n_sto = q(f"SELECT count(*) FROM read_parquet('{C}/stores.parquet')")[0][0]
+    n_open = q(f"SELECT count(*) FROM read_parquet('{C}/stores.parquet') WHERE closed_date IS NULL")[0][0]
+    mv = REPO / "eda_work" / "reports" / "missing_values.csv"
+    hire = q(f"SELECT n_null FROM read_csv('{mv.as_posix()}') WHERE column_name='HireDate'")[0][0]
+    groups = [
+        ("Always empty: dropped", BLUE, [
+            ("Receipts · loyalty_id", n_chk, n_chk, "receipts", "no loyalty number ever recorded"),
+            ("Receipts · service_charge", n_chk, n_chk, "receipts", "always $0"),
+            ("Employees · IsEmancipated", n_emp, n_emp, "employees", "never filled"),
+        ]),
+        ("Partly empty: kept, the gap has a reason", GRAY_D, [
+            ("Stores · ClosedDate", n_open, n_sto, "stores", "empty = the store is still open"),
+        ]),
     ]
-    tot = q("SELECT count(*), count(*) FILTER (WHERE pct_null=0) FROM read_csv('" + (REPO/'eda_work'/'reports'/'missing_values.csv').as_posix() + "')")[0]
-    f = fig(f"{tot[1]} of {tot[0]} columns are complete; the 2 empty ones were dropped",
-            "Share of rows that are empty (or always $0) — every column with any gap, all tables, all 115 days")
-    ax = f.add_axes([0.25, 0.14, 0.42, 0.66])
-    y = np.arange(len(rows))[::-1]
-    for yi, (lab, v, kind, dec, acc) in zip(y, rows):
-        ax.barh(yi, v, height=0.56, color=BLUE if acc else GRAY)
-        ax.text(v + 1.5, yi, f"{v:.0f}%" if v >= 10 else f"{v:.1f}%", va="center", fontsize=12, color=INK)
-    ax.set_yticks(y, [r[0] for r in rows], fontsize=12, color=INK)
-    ax.set_xlim(0, 112); ax.xaxis.set_major_formatter(mt.PercentFormatter()); ax.set_xticks([0, 25, 50, 75, 100])
+    f = fig("Only 3 fields were always empty, and we dropped them",
+            "Every field in every table was checked. Fields not shown are 100% filled, except the two in the note below.")
+    ax = f.add_axes([0.25, 0.20, 0.40, 0.57])
+    y, ticks, labels = 0, [], []
+    for gname, col, rows in groups:
+        ax.text(-0.51, y + 0.15, gname, fontsize=12.5, color=col, fontweight="bold", ha="left", va="bottom",
+                transform=ax.get_yaxis_transform())
+        y -= 0.75
+        for lab, n_empty, n_all, unit, why in rows:
+            pct = n_empty / n_all * 100
+            ax.barh(y, pct, height=0.55, color=col if col == BLUE else GRAY)
+            ax.text(pct + 1.5, y, f"{pct:.1f}%" if pct < 10 else f"{pct:.0f}%", va="center", fontsize=12.5, color=INK, fontweight="bold")
+            ax.text(115, y + 0.13, f"{n_empty:,} of {n_all:,} {unit}", va="center", fontsize=11, color=INK, clip_on=False)
+            ax.text(115, y - 0.2, why, va="center", fontsize=10.5, color=INK2, clip_on=False)
+            ticks.append(y); labels.append(lab); y -= 0.9
+        y -= 0.35
+    ax.set_yticks(ticks, labels, fontsize=12, color=INK)
+    ax.set_ylim(y + 0.4, 0.8); ax.set_xlim(0, 112)
+    ax.xaxis.set_major_formatter(mt.PercentFormatter()); ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel("% of rows where the field is empty", fontsize=11.5)
     grid_x(ax); ax.tick_params(axis="y", length=0); ax.spines["left"].set_visible(False)
-    ax2 = f.add_axes([0.70, 0.14, 0.28, 0.66], sharey=ax); ax2.axis("off")
-    for yi, (lab, v, kind, dec, acc) in zip(y, rows):
-        ax2.text(0, yi, dec, va="center", fontsize=12, color=BLUE if acc else INK2, fontweight="bold" if acc else "normal")
-    ax2.text(0, len(rows) - 0.35, "Decision", fontsize=11, color=MUTED, va="bottom")
+    f.text(0.045, 0.068, f"Not shown: employee birth dates (5.9% empty; removed for privacy, with names and payroll IDs) and hire dates ({hire/n_emp:.1%} empty; not used).",
+           fontsize=11, color=INK2)
     save(f, "01_missing_values.png")
 
 # ================================================================= 02 cleaning funnel (step 3)
