@@ -1,0 +1,5 @@
+show("neg/zero qty lines", "SELECT quantity, gross_price, sold_price, item_name, major_cat_name FROM items WHERE dt='2026-08-18' AND quantity<=0 LIMIT 6")
+show("neg/zero qty by value", "SELECT quantity<0 AS neg, gross_price>0 AS priced, count(*) n FROM items WHERE quantity<=0 GROUP BY ALL")
+show("monster check", "SELECT dt, location_id, check_id, revenue_center_id, n_items, round(sold,2) sold, traffic_count, open_time_raw, close_time_raw FROM checks JOIN (SELECT dt,location_id,check_id, sum(sold_price) sold FROM items GROUP BY ALL) USING (dt,location_id,check_id) ORDER BY n_items DESC LIMIT 3")
+show("dim items vs facts", """WITH f AS (SELECT DISTINCT item_id, item_name, sub_cat_id FROM items) SELECT count(*) pairs, count(*) FILTER (WHERE f.item_name<>i.Name) name_diff, count(*) FILTER (WHERE f.sub_cat_id<>i.SalesCategoryId) cat_diff, (SELECT count(DISTINCT item_id) FROM items) used_items FROM f JOIN itm i ON i.Id=f.item_id""")
+show("modifier structure", "SELECT parent_seq=0 AS top_level, gross_price>0 AS priced, count(*) n FROM items GROUP BY ALL ORDER BY ALL")

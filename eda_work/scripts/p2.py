@@ -1,0 +1,4 @@
+show("locations: facts vs dim", """SELECT c.location_id, l.Name AS name, l.ClosedDate AS closed, count(*) AS n_checks, min(dt) AS first_dt, max(dt) AS last_dt, count(DISTINCT dt) AS n_days FROM checks c LEFT JOIN loc l ON l.Id=c.location_id GROUP BY ALL ORDER BY n_checks DESC""", 80)
+show("dim locations never in facts (count)", "SELECT count(*) AS n, count(*) FILTER (WHERE ClosedDate IS NULL) AS n_open FROM loc WHERE Id NOT IN (SELECT DISTINCT location_id FROM checks)")
+show("revenue centers in facts", "SELECT c.revenue_center_id, r.Name AS name, count(*) AS n FROM checks c LEFT JOIN rc r ON r.Id=c.revenue_center_id GROUP BY ALL ORDER BY n DESC")
+show("weird check ids", "SELECT count(*) FILTER (WHERE check_id<=0) AS le0, count(*) FILTER (WHERE check_id>10000000) AS gt10m, approx_quantile(check_id,[0.01,0.5,0.99]) AS q FROM checks")

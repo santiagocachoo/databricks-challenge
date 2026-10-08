@@ -1,0 +1,6 @@
+show("check key uniqueness", """SELECT count(*) n, count(DISTINCT (dt,check_id)) u_dt_id, count(DISTINCT (dt,location_id,check_id)) u_dt_loc_id, count(DISTINCT check_id) u_id, min(check_id), max(check_id) FROM checks""")
+show("business_date vs dt", "SELECT count(*) FILTER (WHERE business_date<>dt) mism, count(*) FILTER (WHERE business_date IS NULL) n_null FROM checks")
+show("full-duplicate check headers (ignoring id)", """SELECT count(*) FROM (SELECT dt,location_id,table_name,open_time_raw,close_time_raw,traffic_count,revenue_center_id,n_items,n_payments, count(*) c FROM checks GROUP BY ALL HAVING c>1)""")
+show("locations: facts vs dim", """SELECT c.location_id, l.Name, l.ClosedDate, count(*) checks, min(dt), max(dt), count(DISTINCT dt) days FROM checks c LEFT JOIN loc l ON l.Id=c.location_id GROUP BY ALL ORDER BY checks DESC""", 80)
+show("dim locations never in facts", "SELECT Id, Name, OpenDate, ClosedDate FROM loc WHERE Id NOT IN (SELECT DISTINCT location_id FROM checks) ORDER BY Id", 80)
+show("revenue centers in facts", "SELECT c.revenue_center_id, r.Name, count(*) n FROM checks c LEFT JOIN rc r ON r.Id=c.revenue_center_id GROUP BY ALL ORDER BY n DESC")

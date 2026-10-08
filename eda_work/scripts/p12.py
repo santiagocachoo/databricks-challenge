@@ -1,0 +1,3 @@
+show("time zones (active stores)", "SELECT TimeZoneName, count(*) n FROM loc WHERE Id IN (SELECT DISTINCT location_id FROM checks) GROUP BY 1 ORDER BY n DESC")
+show("top walkout stores", "SELECT location_id, l.Name AS name, count(*) n_walk, round(sum(amount)) amt FROM (SELECT location_id, amount, discount_name FROM item_discounts UNION ALL SELECT location_id, amount, discount_name FROM check_discounts) d JOIN loc l ON l.Id=d.location_id WHERE discount_name='WALKOUT' GROUP BY ALL ORDER BY n_walk DESC LIMIT 3")
+show("deleted-but-active share of sales", "SELECT round(sum(i.gross_price*i.quantity) FILTER (WHERE e.Deleted)/sum(i.gross_price*i.quantity)*100,1) pct_sales_deleted_emp FROM items i JOIN emp e ON e.Id=i.employee_id")

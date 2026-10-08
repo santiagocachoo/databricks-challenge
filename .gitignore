@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Raw challenge data (11 GB, provided by organizers - do not commit or push)
+Applebees Challenge/
+
+# Derived data: regenerate with `python3 eda_work/scripts/convert.py` (+ p4.py for check_summary)
+eda_work/parquet/
+
+# Python
+__pycache__/
+*.pyc
+*.tmp

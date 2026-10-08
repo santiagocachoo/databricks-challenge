@@ -1,0 +1,5 @@
+con.execute("CREATE TABLE ck AS SELECT * FROM '"+CK+"'")
+show("exact dup checks incl money", """SELECT count(*) AS n_groups, sum(c) AS n_rows FROM (SELECT count(*) c FROM ck GROUP BY dt,location_id,table_name,open_time_raw,close_time_raw,revenue_center_id,n_items,n_payments,round(sold,2),round(pay,2),round(tax,2) HAVING count(*)>1)""")
+show("by day of week", """SELECT dayname(dt) dow, isodow(dt) d, count(*)/count(DISTINCT dt) checks_per_day, round(sum(sold)/count(DISTINCT dt)) sales_per_day, round(sum(void_amt)/sum(gross_ext)*100,3) void_pct, round(sum(cdisc+idisc)/sum(gross_ext)*100,2) disc_pct FROM ck GROUP BY ALL ORDER BY d""")
+show("by open hour", """SELECT hour(strptime(open_time_raw,'%Y-%m-%dT%H:%M')) h, count(*) n, round(sum(void_amt)/nullif(sum(gross_ext),0)*100,2) void_pct, round(sum(cdisc+idisc)/nullif(sum(gross_ext),0)*100,2) disc_pct, round(avg((n_voids>0)::INT)*100,2) pct_chk_void FROM ck GROUP BY 1 ORDER BY 1""", 30)
+show("weekly trend", "SELECT date_trunc('week',dt) wk, count(DISTINCT dt) d, round(sum(sold)) sales, count(*) checks FROM ck GROUP BY 1 ORDER BY 1", 20)
