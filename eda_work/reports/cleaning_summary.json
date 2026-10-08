@@ -35,8 +35,10 @@
     "is_lookalike_split": 3545
   },
   "columns_dropped": [
-    "loyalty_id (100% null)",
-    "service_charge (100% zero)"
+    "checks.loyalty_id (100% empty)",
+    "checks.service_charge (always 0)",
+    "employees.IsEmancipated (100% empty)",
+    "employees: Name, DateOfBirth, LocationEmployeeId, PayrollEmployeeId, AlternateEmployeeId (privacy)"
   ],
   "thresholds": {
     "giant_lines_gt": 200,

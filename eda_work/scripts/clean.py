@@ -267,7 +267,8 @@ def stage_report():
                "receipts_with_any_data_quality_flag": any_flag, "receipts_clean_and_unflagged": clean_n - any_flag,
                "data_quality_flags": {k: counts[k] for k in flags}, "behaviour_flags": {k: counts[k] for k in behav},
                "context_flags": {k: counts[k] for k in ctx},
-               "columns_dropped": ["loyalty_id (100% null)", "service_charge (100% zero)"],
+               "columns_dropped": ["checks.loyalty_id (100% empty)", "checks.service_charge (always 0)", "employees.IsEmancipated (100% empty)",
+                                   "employees: Name, DateOfBirth, LocationEmployeeId, PayrollEmployeeId, AlternateEmployeeId (privacy)"],
                "thresholds": {"giant_lines_gt": GIANT_LINES, "long_open_minutes_gt": LONG_OPEN_MIN}}
     (REP / "cleaning_summary.json").write_text(json.dumps(summary, indent=2, default=str))
     log("report: " + json.dumps({k: summary[k] for k in ["raw_receipts", "exact_copies_removed", "clean_receipts", "receipts_with_any_data_quality_flag"]}))

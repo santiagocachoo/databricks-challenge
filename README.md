@@ -11,7 +11,7 @@ This repo holds our code and docs. **The data is not in git.** You add it yourse
 ## What's in the repo, and what isn't
 
 ```
-Databricks_challenge/                  <- the repo (folder name doesn't matter)
+databricks-challenge/                  <- the repo (git clone creates this folder)
 ├── README.md                          <- this guide
 ├── requirements.txt                   <- Python libraries to install
 ├── .gitignore                         <- keeps data and your virtual environment out of git
@@ -44,7 +44,7 @@ The data folders are excluded on purpose:
 ```bash
 cd ~/Desktop
 git clone https://github.com/santiagocachoo/databricks-challenge.git
-cd databricks-challente
+cd databricks-challenge
 ```
 
 **Windows (PowerShell):**
@@ -52,10 +52,10 @@ cd databricks-challente
 ```powershell
 cd $HOME\Desktop
 git clone https://github.com/santiagocachoo/databricks-challenge.git
-cd databricks-challente
+cd databricks-challenge
 ```
 
-**Every command from here on is run from inside the `Databricks_challenge` folder.**
+**Every command from here on is run from inside the `databricks-challenge` folder.**
 
 ### Step 2: Create your Python environment
 
@@ -114,11 +114,11 @@ You can analyze everything with this. You won't be able to rebuild from raw, whi
 1. Get the raw dataset from the organizers' dataset link.
 2. Put it at the root of the repo, named **exactly** `Applebees Challenge`: a space between the words, capital A and capital C. If your download is named something else (e.g. `Applebees_Clean_Dataset`), rename it. It must look like this:
    ```
-   Databricks_challenge/Applebees Challenge/dimensions/locations/locations.json
-   Databricks_challenge/Applebees Challenge/dimensions/revenue_centers/revenueCenters.json
-   Databricks_challenge/Applebees Challenge/dimensions/items/items.json
-   Databricks_challenge/Applebees Challenge/dimensions/employees/employees.json
-   Databricks_challenge/Applebees Challenge/facts/checks/brand=rmh/dt=2026-04-28/checks.json
+   databricks-challenge/Applebees Challenge/dimensions/locations/locations.json
+   databricks-challenge/Applebees Challenge/dimensions/revenue_centers/revenueCenters.json
+   databricks-challenge/Applebees Challenge/dimensions/items/items.json
+   databricks-challenge/Applebees Challenge/dimensions/employees/employees.json
+   databricks-challenge/Applebees Challenge/facts/checks/brand=rmh/dt=2026-04-28/checks.json
    ... (115 dt= folders, from 2026-04-28 to 2026-08-20)
    ```
    **Common mistake:** a double folder after unzipping, like `Applebees Challenge/Applebees Challenge/dimensions`. Move the contents up one level.
