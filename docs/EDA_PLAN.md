@@ -1,7 +1,7 @@
 # Applebee's EDA Plan (Phase 1)
 
 Tec de Monterrey x Sun Holdings x Databricks Data Challenge · Applebee's AI-Powered Fraud Detection track
-Last updated: Oct 7, 2026 · Live team version: https://claude.ai/code/artifact/3d05aa74-0b24-476f-b645-4fb429df27ca
+Last updated: Oct 7, 2026, 11 PM · Live team version: https://claude.ai/code/artifact/3d05aa74-0b24-476f-b645-4fb429df27ca
 
 ## Goal
 
@@ -18,18 +18,29 @@ The organizers' structure is: quick dataset overview, key cleaning steps, top pa
 ## Decisions (settled Oct 7)
 
 - **Presentation is tomorrow, Thu Oct 8.** We run P0 tasks only. P1 tasks are optional polish.
-- **Tooling:** Python, with DuckDB and pandas reading the Parquet files in `eda_work/parquet/`. No Databricks notebook for now.
+- **Tooling:** Python, with DuckDB and pandas. Everyone analyzes the clean tables in `eda_work/clean/`. No Databricks notebook for now.
+- **Repo:** code and docs live in git; data never does. Teammates set up with `README.md`, and either get `clean.zip` from Santiago or rebuild with `python eda_work/scripts/build_all.py`.
 - **Deck:** on hold until the whole team understands the data.
 - **Form and proof:** already submitted.
 - **Framing rule:** the data has no fraud labels. We say "risk signals" and "anomalies", never "fraud". We never show employee names, only IDs.
 
-## Status
+## Status and next steps
 
-The raw data has been fully ingested and profiled. All 115 daily JSON files (11 GB) became 7 flat Parquet tables (273 MB), with 0 failed days. What remains is cleaning, charts, and then the deck and script.
+| Step | What | Tasks | State |
+|---|---|---|---|
+| 0 | Ingest: 115 daily JSON files (11 GB) → 7 flat Parquet tables, profile every table | T0 | Done |
+| 1 | Clean tables: positive tip, merged labels, line types, flags, anonymized employees → `eda_work/clean/` | T5 | Done |
+| 2 | Duplicates: 1,800 look-alike **groups** holding 3,774 receipts → 3,545 split bills kept, 229 exact copies ($73) removed | T6 | Done |
+| — | Repo: one-command rebuild (`build_all.py`), setup checker (`check_setup.py`), `README.md` for teammates | — | Done |
+| 3 | Cleaning evidence: missing-values heatmap and cleaning funnel (the numbers are already in `eda_work/reports/`) | T7, T8 | **Waiting for Santiago's go** |
+| 4 | The 6 charts: check waterfall, trend with heatmap, lever bars, concentration curve, store scatter, cleaning funnel | T2, T10–T14, T19, T20 | Not started |
+| 5 | Deck, script, two timed rehearsals | T1, T3, T21–T23 | Not started |
+
+The full pipeline has been tested end to end: a rebuild reproduces the same rows and the same cleaning numbers.
 
 ## Task list
 
-P0 means needed for a 4/4 score. P1 means polish if time allows. Do T5 and T6 first, because every chart reads from the clean layer.
+P0 means needed for a 4/4 score. P1 means polish if time allows. T5 and T6 are done, so every chart can now read from the clean layer.
 
 ### 1. Data understanding and context
 
@@ -41,9 +52,9 @@ P0 means needed for a 4/4 score. P1 means polish if time allows. Do T5 and T6 fi
 
 ### 2. Data cleaning and preparation
 
-- [ ] T5 (P0) Build the clean layer. Apply every cleaning decision in the table below and write `eda_work/clean/`, with flag columns: is_modifier, is_empty_check, is_unbalanced, is_dup_candidate, is_long_check.
-- [ ] T6 (P0) Resolve the 1,800 possible duplicate groups by comparing their item lines, and report how many are true duplicates.
-- [ ] T7 (P0) Missing-value matrix: null % and zero % for every column in every table, drawn as one heatmap.
+- [x] T5 (P0) Build the clean layer. Apply every cleaning decision in the table below and write `eda_work/clean/`, with flag columns: is_modifier, is_empty_check, is_unbalanced, is_dup_candidate, is_long_check.
+- [x] T6 (P0) Resolve the 1,800 possible duplicate groups by comparing their item lines. Result: 3,545 split bills, and 229 exact copies ($73) removed.
+- [ ] T7 (P0) Missing-value matrix: null % and zero % for every column in every table, drawn as one heatmap. The numbers are done (`reports/missing_values.csv`); the chart is not.
 - [ ] T8 (P0) Cleaning funnel: raw records → flagged → excluded, with counts at each step. One slide.
 - [ ] T9 (P1) Cleaning log for the appendix: every decision with before and after counts, ready for Q&A.
 
@@ -88,12 +99,12 @@ Core rule: in fraud work, outliers are signal, so we flag them instead of deleti
 | Missing | 20 store-days missing across 7 stores | Keep the stores, normalize per open day, and flag the gaps |
 | Missing | Gaps in the HR file: birth date, hire date, no job-ID lookup; employee_id 0 | Treat 0 as "system" and ask the organizers |
 | Missing | Time zone field is wrong (Ohio stores are labeled Central) | Ignore it, since timestamps are already local |
-| Duplicates | 3,774 checks in 1,800 groups share every header and money field | Compare item lines (T6) |
+| Duplicates | 3,774 checks in 1,800 groups share every header and money field | Done: 3,545 split bills kept, 229 exact copies removed |
 | Duplicates | 9,108 split-check groups | Legitimate: keep them and explain |
 | Duplicates | 24,558 repeated names in the HR file | Never join on name |
 | Outliers | $0 checks with 5,120 and 1,424 lines (store 42) | Flag |
 | Outliers | 52.5K zero-minute checks, 10.4K over 6 h, 18K after midnight | Keep and flag |
-| Outliers | 167K zero-quantity lines, 766 negative prices, 3,779 negative payments | Keep and flag |
+| Outliers | 167K zero-quantity lines, 766 negative prices, 3,779 negative payments (3,764 gift-card sales, 15 refunds) | Keep and flag |
 | Outliers | 40% of guest counts are fractional, 190K are zero | Keep; use guest counts for dine-in only |
 | Outliers | 11,508 checks with no items, 3,856 with no payment | Keep and flag |
 | Consistency | Duplicate labels: SERV ERR / SERVER ERR, NOT RECVD / NOT RECEVD, Postmates / POSTMATES, Pride / PRIDE, 1.5 OZ RANCH / 1.5OZ RANCH | Normalize to one label each |
@@ -108,7 +119,7 @@ Core rule: in fraud work, outliers are signal, so we flag them instead of deleti
 | 2 | 0:30–1:10 | Every check balances to the cent, so we can trust the money | Schema and check waterfall | Understanding |
 | 3 | 1:10–1:55 | 11 GB of nested JSON became 7 clean tables; outliers are flagged, not deleted | Cleaning funnel and top 5 fixes | Cleaning |
 | 4 | 1:55–2:35 | Sales follow the week, but voids stay near 0.8% every day and hour | Daily trend, weekday × hour heatmap | Insights |
-| 5 | 2:35–3:25 | $3M in discounts and $726K in voids; 5% of employees drive 47% of walkouts | Lever bars and concentration curve | Insights, Visuals |
+| 5 | 2:35–3:25 | $3M in discounts and $726K in voids; 5% of employees drive 39% of walked-out receipts | Lever bars and concentration curve | Insights, Visuals |
 | 6 | 3:25–4:15 | Stores differ up to 7×; Munster voids nearly 3× the chain average, every month | Store scatter, Munster monthly void rate | Insights |
 | 7 | 4:15–4:50 | Risk is about who and where, so Phase 2 scores employees and stores | 3 takeaways and next step | Communication |
 

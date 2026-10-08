@@ -4,10 +4,20 @@
 # Raw challenge data (11 GB, provided by organizers - do not commit or push)
 Applebees Challenge/
 
-# Derived data: regenerate with `python3 eda_work/scripts/convert.py` (+ p4.py for check_summary)
+# Built data: regenerate with `python eda_work/scripts/build_all.py`
 eda_work/parquet/
 
 # Python
 __pycache__/
 *.pyc
 *.tmp
+
+# Clean tables: regenerate with `python eda_work/scripts/build_all.py` (or get clean.zip from a teammate)
+eda_work/clean/
+
+# Python virtual environment (each person creates their own)
+.venv/
+venv/
+
+# Zipped data shared over Drive, never through git
+*.zip

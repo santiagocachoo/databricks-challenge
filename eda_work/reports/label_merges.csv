@@ -1,0 +1,15 @@
+kind,raw,clean,n
+discount,5OFF25,5 OFF 25,51
+discount,Birthday,BIRTHDAY,764
+discount,EMP 50%,EMP 50,1774
+discount,Free APP,FREEAPP,164
+discount,Free App ,FREEAPP,8
+discount,FREE CHPS,FREECHPS,1
+discount,Marketing,MARKETING,3359
+discount,Pride,PRIDE,1280
+discount,Rollout,ROLLOUT,226
+payment,GC Sold,GC SOLD,
+payment,Olo,OLO,
+payment,Postmates,POSTMATES,
+void_reason,NOT RECEVD,NOT RECVD,
+void_reason,SERVER ERR,SERV ERR,

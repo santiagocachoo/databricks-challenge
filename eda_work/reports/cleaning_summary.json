@@ -1,0 +1,45 @@
+{
+  "raw_receipts": 2142846,
+  "lookalike_groups": 1800,
+  "lookalike_receipts": 3774,
+  "exact_copies_removed": 229,
+  "exact_copies_sales_usd": 72.96,
+  "clean_receipts": 2142617,
+  "receipts_with_any_data_quality_flag": 42291,
+  "receipts_clean_and_unflagged": 2100326,
+  "data_quality_flags": {
+    "flag_unbalanced": 78,
+    "flag_no_items": 11301,
+    "flag_no_payment": 3643,
+    "flag_giant": 142,
+    "flag_long_open": 10387,
+    "flag_odd_check_id": 9,
+    "flag_negative_price": 647,
+    "flag_zero_qty_priced": 17981
+  },
+  "behaviour_flags": {
+    "has_void": 55114,
+    "has_discount": 268579,
+    "has_walkout": 2345,
+    "has_self_approved_discount": 367,
+    "is_fully_comped": 58081,
+    "has_refund": 15,
+    "has_gift_card_sale": 2494,
+    "has_tip_over_bill": 12886
+  },
+  "context_flags": {
+    "is_instant": 52494,
+    "is_after_midnight": 18253,
+    "is_zero_guests": 190151,
+    "is_split_guests": 867406,
+    "is_lookalike_split": 3545
+  },
+  "columns_dropped": [
+    "loyalty_id (100% null)",
+    "service_charge (100% zero)"
+  ],
+  "thresholds": {
+    "giant_lines_gt": 200,
+    "long_open_minutes_gt": 360
+  }
+}

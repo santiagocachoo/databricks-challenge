@@ -1,6 +1,8 @@
+import tempfile
+DUCK_TMP = (__import__("pathlib").Path(tempfile.gettempdir()) / "duckdb_spill").as_posix()  # works on macOS, Linux and Windows
 import duckdb, sys, os
 con = duckdb.connect()
-con.execute("SET memory_limit='2GB'; SET threads=4; SET temp_directory='/tmp/duck'")
+con.execute(f"SET memory_limit='2GB'; SET threads=4; SET temp_directory='{DUCK_TMP}'")
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]  # repo root (Databricks_challenge/)
 P = str(REPO / "eda_work" / "parquet")

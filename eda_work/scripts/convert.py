@@ -1,3 +1,5 @@
+import tempfile
+DUCK_TMP = (__import__("pathlib").Path(tempfile.gettempdir()) / "duckdb_spill").as_posix()  # works on macOS, Linux and Windows
 import duckdb, time, sys, os, glob, json, traceback
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]  # repo root (Databricks_challenge/)
@@ -7,14 +9,14 @@ tables = ["checks","items","item_discounts","check_discounts","payments","taxes"
 for t in tables: os.makedirs(f"{OUT}/{t}", exist_ok=True)
 files = sorted(glob.glob(f"{ROOT}/dt=*/checks.json"))
 if len(sys.argv) > 1: files = [f for f in files if any(a in f for a in sys.argv[1:])]
-log = open(REPO / "eda_work" / "scripts" / "convert_log.jsonl", "a")
+log = open(Path(OUT) / "convert_log.jsonl", "a")  # scripts/convert_log.jsonl is the committed record of the first run
 for f in files:
     dt = f.split("dt=")[1].split("/")[0]
     if all(os.path.exists(f"{OUT}/{t}/{dt}.parquet") for t in tables):
         continue
     t0 = time.time()
     con = duckdb.connect()
-    con.execute("SET memory_limit='2GB'; SET threads=4; SET temp_directory='/tmp/duck'; SET preserve_insertion_order=false")
+    con.execute(f"SET memory_limit='2GB'; SET threads=4; SET temp_directory='{DUCK_TMP}'; SET preserve_insertion_order=false")
     try:
         con.execute(f"CREATE TABLE c AS SELECT * FROM read_json('{f}', format='array', maximum_object_size=200000000, sample_size=-1, hive_partitioning=false)")
         schema = {r[0]: r[1] for r in con.execute("DESCRIBE c").fetchall()}

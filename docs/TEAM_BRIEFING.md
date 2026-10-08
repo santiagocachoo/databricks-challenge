@@ -7,7 +7,8 @@ Read time: about 7 minutes. **Presentation: tomorrow, Thu Oct 8. Form already su
 - We have the full dataset: 115 days of receipts from 127 Applebee's restaurants, about 2.1 million receipts and $99M collected.
 - It's already loaded and cleaned into a format we can analyze in seconds with Python. Nobody needs to touch the raw 11 GB files.
 - Our main finding: void and discount rates are almost identical on every day and at every hour, but they vary up to 7× between stores and employees. **Risk is about who and where, not when.**
-- Tomorrow we present a 5-minute EDA, with one presenter. We still need to finish cleaning, make about 6 charts, then build the deck and script.
+- Tomorrow we present a 5-minute EDA, with one presenter. Cleaning is done. We still need the cleaning visuals, about 6 charts, then the deck and script.
+- **To get the data on your laptop, follow `README.md` at the repo root, step by step.**
 
 ## What the data is
 
@@ -61,7 +62,7 @@ Each lever below has an honest use and a theft version.
 |---|---|---|---|
 | Voids | Wrong item, customer changed their mind | Customer pays cash, server voids an item afterward and keeps the difference | $726K |
 | Discounts and comps | Complaints, employee meals, promos | Free food for friends, or a discount added after a cash payment | $3.0M |
-| Walkouts | Real dine-and-dash | Customer paid cash, server calls it a walkout and keeps the money | 27K lines |
+| Walkouts | Real dine-and-dash | Customer paid cash, server calls it a walkout and keeps the money | 2,345 receipts |
 | Tips | Normal tipping | "Tip padding": raising a card tip after the customer signs | 11.7K card tips are bigger than the bill |
 | Self-approval | — | An employee approving their own void or discount | 5,866 events |
 
@@ -75,7 +76,7 @@ Each lever below has an honest use and a theft version.
    - Weekly sales dropped about 19% from May to August.
 3. **Timing doesn't explain risk.** The void rate stays at about 0.8% of sales on every weekday and at every hour.
 4. **People and stores do:**
-   - The **top 5% of employees account for 47% of all walkouts**, 20% of void dollars and 21% of discount dollars.
+   - The **top 5% of employees account for 39% of walked-out receipts**, 20% of void dollars and 21% of discount dollars.
    - The median server voids 0.77% of their sales; the top 1% void more than 4.2%.
    - Store void rates range from 0.32% to 2.29%.
 5. **Munster (store 80)** has the highest void rate in the chain, about 2.3% against a chain average of 0.83%, and it's high in every month. It also has the most comped receipts. Its missing days in mid-August are shared with 3 nearby Indiana stores, so that part looks like a regional outage, not anything suspicious.
@@ -89,23 +90,26 @@ Each lever below has an honest use and a theft version.
 | Receipt numbers repeat across stores | Identify a receipt by date + store + receipt number |
 | 2 empty columns (loyalty ID, service charge) | Drop them |
 | 20 store-days missing across 7 stores | Keep the stores and compare per open day |
-| 1,800 groups of receipts that look identical | Checking whether they are real duplicates or split bills |
+| 1,800 look-alike groups (3,774 receipts) that look identical from the outside | Checked inside: 3,545 receipts are split bills (kept); 229 are exact copies worth $73 in total (removed) |
 | Split bills look like duplicates and give fractional guest counts (0.5, 0.67) | Legitimate; keep them |
-| Weird receipts: a $0 receipt with 5,120 lines, receipts open more than 6 hours, negative payments | Flag them; don't delete. In fraud work, outliers are the signal. |
+| Weird receipts: a $0 receipt with 5,120 lines, receipts open more than 6 hours, real refunds | Flag them; don't delete. In fraud work, outliers are the signal. 42,291 receipts (2%) carry at least one flag. |
 | Typos in labels ("SERV ERR" vs "SERVER ERR") | Merge into one label |
 | The HR file has names and birth dates, and no explanation of job IDs | Use IDs only; ask the organizers |
 
 ## How to open the data yourself
 
-Everything is in `Databricks_challenge/eda_work/parquet/`. Parquet is like CSV, but compressed and fast: the 11 GB became 273 MB. Santiago can share the folder.
+Setup is in `README.md`: clone the repo, create the Python environment, then either unzip `clean.zip` from Santiago (fastest) or rebuild with `python eda_work/scripts/build_all.py`. Check it worked with `python eda_work/scripts/check_setup.py`.
+
+The clean tables are in `eda_work/clean/`. Parquet is like CSV, but compressed and fast: the 11 GB became about 300 MB.
 
 ```python
 import pandas as pd
-checks = pd.read_parquet("eda_work/parquet/checks")   # 2.1M receipts
-voids  = pd.read_parquet("eda_work/parquet/voids")    # 178K voided items
-summary = pd.read_parquet("eda_work/parquet/check_summary")  # one row per receipt with totals
+checks = pd.read_parquet("eda_work/clean/checks.parquet")      # 2.1M receipts, 53 columns incl. totals and flags
+voids  = pd.read_parquet("eda_work/clean/voids.parquet")       # 178K voided items, merged reasons
+disc   = pd.read_parquet("eda_work/clean/discounts.parquet")   # item + check discounts in one table
+pays   = pd.read_parquet("eda_work/clean/payments.parquet")    # positive tip, tip_pct, method_group
 # items has 28.6M rows: load only the columns you need
-items = pd.read_parquet("eda_work/parquet/items", columns=["location_id", "item_name", "sold_price"])
+items = pd.read_parquet("eda_work/clean/items.parquet", columns=["location_id", "item_name", "line_type", "sold_price"])
 ```
 
 The key to join tables is `dt` + `location_id` + `check_id`.
@@ -116,15 +120,17 @@ The key to join tables is `dt` + `location_id` + `check_id`.
 2. **Understanding:** how a receipt works, and proof that 99.996% balance.
 3. **Cleaning:** 11 GB of nested JSON became 7 clean tables; what we fixed and what we flagged.
 4. **Baseline:** sales follow the week, but the void rate stays flat.
-5. **Levers:** $3M in discounts and $726K in voids, and 5% of employees drive 47% of walkouts.
+5. **Levers:** $3M in discounts and $726K in voids, and 5% of employees drive 39% of walked-out receipts.
 6. **Stores:** up to a 7× difference; Munster voids nearly 3× the average.
 7. **Takeaway:** risk is about who and where, so in Phase 2 we score employees and stores.
 
 ## What's left before tomorrow
 
-- [ ] Finish the clean tables and settle the possible duplicates
+- [x] Finish the clean tables and settle the possible duplicates (done: `eda_work/clean/`)
+- [x] Repo ready for the team: `README.md`, one-command rebuild, setup checker
+- [ ] Cleaning visuals: missing-values heatmap and cleaning funnel
 - [ ] Make about 6 charts (receipt waterfall, cleaning funnel, trend and heatmap, lever bars, concentration curve, store scatter)
 - [ ] Build the 7-slide deck and write the script (about 650 words)
 - [ ] Do 2 timed run-throughs, staying under 4:45
 
-More detail: `EDA_PLAN.md` (tasks and storyboard) and `EDA_LEARNINGS.md` (every number and finding).
+More detail: `EDA_PLAN.md` (tasks, storyboard, status) and `EDA_LEARNINGS.md` (every number and finding).

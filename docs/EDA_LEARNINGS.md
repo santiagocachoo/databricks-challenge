@@ -1,6 +1,6 @@
 # Applebee's Dataset: Everything We've Learned
 
-Phase 1 (EDA) · profiled Oct 7, 2026 · all 115 days, every row
+Phase 1 (EDA) · profiled and cleaned Oct 7, 2026 · all 115 days, every row
 Numbers come from queries over the full dataset, not a sample.
 
 ---
@@ -184,9 +184,9 @@ Rule for a modifier: a child line (`parent_seq > 0`) with a $0 price. Don't use 
 | Fully comped checks | 58,082 checks | $1.11M gross | Same, at 100% |
 | Item discounts | 275,991 lines | $1.07M | Same, smaller and harder to notice |
 | Voids | 178,303 lines on 55,120 checks | $726K | Customer pays cash, server voids an item afterward and keeps the difference |
-| Walkouts | 27,306 lines | $93K | Customer paid cash, server records a walkout and keeps the cash |
+| Walkouts | 2,345 receipts (27,306 discount lines: every item on the receipt gets its own WALKOUT line) | $93K | Customer paid cash, server records a walkout and keeps the cash |
 | Self-approved voids and discounts | 5,866 events | $32.9K | Skips the manager check |
-| Refunds (negative payments) | 3,779 payments | not yet measured | Fake refunds |
+| Refunds | 15 payments | $151 | Fake refunds. The other 3,764 negative payments are gift-card sales ("GC Sold"), which the register books as negative. |
 | Unbalanced checks | 78 checks | about $1K net | Errors or manipulation |
 | Card tips above 100% of the bill | 11,744 payments | not yet measured | Tip padding: server raises the tip after the customer signs |
 
@@ -233,9 +233,8 @@ Rule for a modifier: a child line (`parent_seq > 0`) with a $0 price. Don't use 
 |---|---|---|---|---|
 | Void rate | 0.77% | 1.83% | 4.18% | 8% |
 | Discount rate | 3.1% | 5.5% | 9.3% | 19% |
-| Walkouts | 0 | 31 | 111 | 240 |
 
-The top 5% of employees account for 47% of all walkouts, 20% of void dollars and 21% of discount dollars. The top 1% account for 17%, 6% and 6%.
+The top 5% of employees account for 39% of walked-out receipts, 20% of void dollars and 21% of discount dollars. The top 1% account for 13.5%, 6% and 6%. 1,095 of the 3,183 employees have at least one walked-out receipt, and the most any single employee has is 22.
 
 **Where (big spread between stores):**
 
@@ -245,16 +244,16 @@ The top 5% of employees account for 47% of all walkouts, 20% of void dollars and
 | Discount rate | 1.56% | 3.42% | 7.2% |
 | Cash share | 7.4% | 14.6% | 22.0% |
 | Fully comped checks | — | 2.66% | 6.11% |
-| Walkouts | 0 (3 stores) | 167 | 1,610 (Morse Road, 174) |
+| Walked-out receipts | — | 16 | 114 (Morse Road, 174) |
 
-- Next most walkouts: Brice Road (155) with 965 and Corpus Christi (39) with 702.
+- Next most walked-out receipts: Brice Road (155) with 76 and Cabela Drive (65) with 64.
 - Highest void rates: Munster (80) 2.29%, Grand Island (19) 1.73%, Clinton (69) 1.69%, Columbus (24) 1.65%, Corpus Christi (39) 1.59%, Nicholasville (108) 1.55%.
 
 **Munster (store 80):**
 
 - It has the highest void rate in the chain: 2.28% before August, against 0.83% for the rest of the chain.
 - That rate is consistent every month: Apr 2.0%, May 2.53%, Jun 1.68%, Jul 2.61%, Aug 2.39%.
-- It also has the highest share of fully comped checks (4.96%), 599 walkouts, and 3 of the 8 highest-void employees with $10K+ in sales (161078, 161205, 159512).
+- It also has the highest share of fully comped checks (4.96%), 37 walked-out receipts, and 3 of the 8 highest-void employees with $10K+ in sales (161078, 161205, 159512).
 - Its data gap on Aug 11–17 is NOT suspicious. Merrillville (77), Portage (82) and Valparaiso (86), all Northwest Indiana, have gaps on the same days, which points to a regional outage or weather.
 
 **HR flag:** 1,020 employees marked `Deleted` in the HR file still rang 14.6% of sales during the period. Most likely they left after August, which is worth comparing against their risk metrics.
@@ -274,12 +273,12 @@ The top 5% of employees account for 47% of all walkouts, 20% of void dollars and
 | HR gaps | 9,184 missing birth dates, 5,351 missing hire dates, 3,134 with no job IDs, 37 job IDs with no names. employee_id 0 on 3,283 item lines. | Treat 0 as system; ask the organizers |
 | HR file is historical | 148,650 of 156,975 records are `Deleted`; 9,126 are "Borrowed" | Use only the 3,194 IDs that appear in sales |
 | Duplicate names | 24,558 names repeat (rehires and transfers) | Never join on name |
-| Possible duplicates | 3,774 checks in 1,800 groups identical on store, table, open/close minute, total, tax, payment | Compare item lines |
+| Possible duplicates | 1,800 look-alike groups (not receipts) holding 3,774 receipts, identical on store, table, open/close minute, total, tax, payment | Resolved: 3,545 are split bills (food or payments differ). 229 are exact copies of another receipt, worth $73 in total, and were removed. |
 | Split checks | 9,108 groups: same table and times, different amounts | Legitimate |
 | Giant $0 checks | Store 42 (Ada): 5,120 lines on Aug 13, 1,424 lines on Jul 31 | Flag |
 | Durations | 52,503 zero-minute (to-go and delivery), 10,387 over 6 h (open tabs), 18,253 opened after midnight | Keep, flag |
 | Quantities and prices | 166,881 zero-quantity lines (59,004 priced), 766 negative SoldPrice, 116 SoldPrice > GrossPrice | Flag |
-| Payments | 3,779 negative (refunds), 75,579 zero, max $2,500 | Flag |
+| Payments | 3,779 negative: 3,764 are gift-card sales, 15 are real refunds. 75,579 zero, max $2,500. | Flag refunds; label gift-card sales |
 | Guest counts | 867,407 fractional (split checks share guests), 190,375 zero (delivery and to-go), max 284 | Use for dine-in only |
 | Empty checks | 11,508 with no items, 3,856 with no payment | Flag |
 | Duplicate labels | SERV ERR/SERVER ERR, NOT RECVD/NOT RECEVD, Postmates/POSTMATES, Pride/PRIDE, 1.5 OZ RANCH/1.5OZ RANCH | Normalize |
@@ -287,18 +286,91 @@ The top 5% of employees account for 47% of all walkouts, 20% of void dollars and
 | Generic tax names | "Tax Category 1/2" | Leave as is |
 | Privacy | Full names and birth dates in employees.json | Show IDs only |
 
-## 12. Technical reference
+## 12. Cleaning results (step 1, done Oct 7)
 
-- **Location:** `Databricks_challenge/eda_work/` on Santiago's Mac.
+`eda_work/scripts/clean.py` builds the clean layer in about 20 seconds. Nothing weird is deleted; only exact copies are removed.
+
+| Step | Receipts |
+|---|---|
+| Raw receipts | 2,142,846 |
+| Exact copies removed | 229 ($73 of sales) |
+| Clean receipts | 2,142,617 |
+| … with at least one data-quality flag (kept) | 42,291 (2.0%) |
+| … clean and unflagged | 2,100,326 (98.0%) |
+
+**Data-quality flags** (`flag_*` columns on `clean/checks.parquet`):
+
+| Flag | Receipts |
+|---|---|
+| no_items | 11,301 |
+| long_open (over 6 h) | 10,387 |
+| zero_qty_priced (a line with quantity 0 and a price) | 17,981 |
+| no_payment | 3,643 |
+| negative_price | 647 |
+| giant (over 200 lines) | 142 |
+| unbalanced | 78 |
+| odd_check_id | 9 |
+
+**Behavior flags** (risk levers, not errors):
+
+| Flag | Receipts |
+|---|---|
+| has_discount | 268,579 |
+| is_fully_comped | 58,081 |
+| has_void | 55,114 |
+| has_tip_over_bill | 12,886 |
+| has_gift_card_sale | 2,494 |
+| has_walkout | 2,345 |
+| has_self_approved_discount | 367 |
+| has_refund | 15 |
+
+**Context flags** (normal behavior):
+
+| Flag | Receipts |
+|---|---|
+| is_split_guests | 867,406 |
+| is_zero_guests | 190,151 |
+| is_instant | 52,494 |
+| is_after_midnight | 18,253 |
+| is_lookalike_split | 3,545 |
+
+**What changed in the clean tables:**
+
+- **Tip:** `tip` is a positive number. The original `gratuity` is kept next to it, and `tip_pct` = tip ÷ (amount − tip). The median card tip is 15.7%.
+- **Line types:** every item line has a `line_type`: modifier 14.94M, menu item 7.75M, free line 4.13M, combo part / add-on 1.74M.
+- **Merged labels**, listed in `reports/label_merges.csv`:
+  - void reasons SERVER ERR → SERV ERR and NOT RECEVD → NOT RECVD
+  - 9 discount spellings (EMP 50% → EMP 50, Free APP / Free App → FREEAPP, Birthday → BIRTHDAY, Pride → PRIDE…)
+  - payment names in upper case
+- **Void reasons** get a readable description, e.g. CUST CHANG → "Customer changed order".
+- **Discounts:** item-level and check-level discounts are in one table, with `level`, `is_walkout`, `is_self_approved` and `no_manager`.
+- **Payments:**
+  - `method_group`: Card $71.2M, Cash $14.5M, Delivery app / partner $10.7M, Gift card $2.8M, Online card $0.2M, House charge, Gift card sold.
+  - `is_refund` and `is_tip_over_bill` flags.
+- **Channels:** `channel_group` is one of Dine-in 1.65M, Delivery app 254K, Online order 142K, To go 95K, Catering 644, Other 317.
+- **Columns:** the checks table now has 53 columns. Times are parsed, and it includes open hour, weekday, duration, store name, channel, money totals and all the flags.
+- **Employees:** `clean/employees.parquet` has no names, birth dates or payroll IDs.
+- **Reports:** `reports/missing_values.csv` (null and zero % for every column), `reports/cleaning_summary.json` (the funnel and flag counts) and `reports/label_merges.csv`.
+- **Check:** the balance check still holds on the clean data: 2,142,539 of 2,142,617 receipts, with the same 78 exceptions.
+
+## 13. Technical reference
+
+- **Location:** `Databricks_challenge/eda_work/` on Santiago's Mac. Use `clean/` for analysis; `parquet/` is the raw flattened copy.
   - `parquet/<table>/<date>.parquet`: the 7 tables, plus `parquet/check_summary/check_summary.parquet`.
+  - `scripts/build_all.py`: rebuilds everything in one command (convert → check summary → clean), about 4–6 minutes from scratch. Tested: a rebuild reproduces identical rows and reports.
+  - `scripts/check_setup.py`: checks Python, libraries, raw data and built tables, and says what to fix.
   - `scripts/convert.py`: JSON → Parquet for all days (about 1–3 s per day).
-  - `scripts/q.py`: registers the tables for DuckDB SQL.
+  - `scripts/build_check_summary.py`: one row per receipt with its totals.
+  - `scripts/clean.py`: builds `clean/` and `reports/`.
+  - `scripts/dup_check.py`: the duplicate analysis.
+  - `scripts/q.py`: registers the raw tables for DuckDB SQL (used by `p1`–`p12`, `e1`–`e3`).
+  - Setup for teammates: `README.md` at the repo root.
   - `scripts/p1.py`…`p12.py`: the profiling queries behind every number here.
-- **Open in pandas:** `pd.read_parquet("eda_work/parquet/checks")`. For `items` (28.6M rows), load only the columns you need, or use DuckDB.
-- **DuckDB:** an SQL engine that runs inside Python and queries Parquet files directly without loading them into memory: `duckdb.sql("SELECT ... FROM 'eda_work/parquet/items/*.parquet'")`.
+- **Open in pandas:** `pd.read_parquet("eda_work/clean/checks.parquet")`. For `items` (28.6M rows), load only the columns you need, or use DuckDB.
+- **DuckDB:** an SQL engine that runs inside Python and queries Parquet files directly without loading them into memory: `duckdb.sql("SELECT ... FROM 'eda_work/clean/items.parquet'")`.
 - **Column names in Parquet:** snake_case, e.g. `check_id`, `location_id`, `sold_price`, `gratuity`, `void_cat_name`, `discount_name`, `pay_cat_name`. Every table has `dt` (business date).
 
-## 13. Open questions for the organizers
+## 14. Open questions for the organizers
 
 - What do the job IDs in employees.json mean (which ID is server, manager, cook)?
 - What does `Deleted` mean, and when was the HR file extracted?

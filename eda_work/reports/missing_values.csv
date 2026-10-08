@@ -1,0 +1,110 @@
+table_name,column_name,type,n_rows,n_null,pct_null,n_zero_or_blank,pct_zero_or_blank
+checks,dt,DATE,2142846,0,0.0,,
+checks,check_id,BIGINT,2142846,0,0.0,0,0.0
+checks,location_id,BIGINT,2142846,0,0.0,0,0.0
+checks,business_date,DATE,2142846,0,0.0,,
+checks,table_name,VARCHAR,2142846,0,0.0,0,0.0
+checks,open_time_raw,VARCHAR,2142846,0,0.0,0,0.0
+checks,close_time_raw,VARCHAR,2142846,0,0.0,0,0.0
+checks,traffic_count,DOUBLE,2142846,0,0.0,190375,8.88
+checks,service_charge,DOUBLE,2142846,0,0.0,2142846,100.0
+checks,loyalty_id,VARCHAR,2142846,2142846,100.0,0,0.0
+checks,revenue_center_id,BIGINT,2142846,0,0.0,0,0.0
+checks,n_items,BIGINT,2142846,0,0.0,11508,0.54
+checks,n_voids,BIGINT,2142846,0,0.0,2087726,97.43
+checks,n_payments,BIGINT,2142846,0,0.0,3856,0.18
+checks,n_check_discounts,BIGINT,2142846,0,0.0,1928009,89.97
+checks,n_tax,BIGINT,2142846,0,0.0,239160,11.16
+items,dt,DATE,28558925,0,0.0,,
+items,check_id,DOUBLE,28558925,0,0.0,0,0.0
+items,location_id,BIGINT,28558925,0,0.0,0,0.0
+items,line_no,BIGINT,28558925,0,0.0,0,0.0
+items,item_id,BIGINT,28558925,0,0.0,0,0.0
+items,quantity,DOUBLE,28558925,0,0.0,166881,0.58
+items,gross_price,DOUBLE,28558925,0,0.0,19064916,66.76
+items,sold_price,DOUBLE,28558925,0,0.0,19164030,67.1
+items,employee_id,BIGINT,28558925,0,0.0,3283,0.01
+items,revenue_center_id,BIGINT,28558925,0,0.0,0,0.0
+items,order_time_raw,VARCHAR,28558925,0,0.0,0,0.0
+items,seat,BIGINT,28558925,0,0.0,708273,2.48
+items,seq,BIGINT,28558925,0,0.0,0,0.0
+items,parent_seq,BIGINT,28558925,0,0.0,11879468,41.6
+items,pos_source_id,BIGINT,28558925,0,0.0,21214729,74.28
+items,item_name,VARCHAR,28558925,0,0.0,0,0.0
+items,item_plu,BIGINT,28558925,0,0.0,2149560,7.53
+items,major_cat_id,BIGINT,28558925,0,0.0,0,0.0
+items,major_cat_name,VARCHAR,28558925,0,0.0,0,0.0
+items,sub_cat_id,BIGINT,28558925,0,0.0,0,0.0
+items,sub_cat_name,VARCHAR,28558925,0,0.0,0,0.0
+items,n_item_discounts,BIGINT,28558925,0,0.0,28282934,99.03
+payments,dt,DATE,2232092,0,0.0,,
+payments,check_id,DOUBLE,2232092,0,0.0,0,0.0
+payments,location_id,BIGINT,2232092,0,0.0,0,0.0
+payments,pay_cat_id,BIGINT,2232092,0,0.0,0,0.0
+payments,amount,DOUBLE,2232092,0,0.0,75579,3.39
+payments,gratuity,DOUBLE,2232092,0,0.0,1199128,53.72
+payments,employee_id,BIGINT,2232092,0,0.0,179,0.01
+payments,pos_source_id,BIGINT,2232092,0,0.0,1850225,82.89
+payments,pay_cat_no,BIGINT,2232092,0,0.0,0,0.0
+payments,pay_cat_name,VARCHAR,2232092,0,0.0,0,0.0
+payments,is_credit_card,BOOLEAN,2232092,0,0.0,,
+payments,is_gift_card,BOOLEAN,2232092,0,0.0,,
+payments,is_gift_cert,BOOLEAN,2232092,0,0.0,,
+payments,is_petty_cash,BOOLEAN,2232092,0,0.0,,
+payments,is_non_pos,BOOLEAN,2232092,0,0.0,,
+payments,is_cash_debit,BOOLEAN,2232092,0,0.0,,
+voids,dt,DATE,178303,0,0.0,,
+voids,check_id,DOUBLE,178303,0,0.0,0,0.0
+voids,location_id,BIGINT,178303,0,0.0,0,0.0
+voids,item_id,BIGINT,178303,0,0.0,0,0.0
+voids,quantity,DOUBLE,178303,0,0.0,768,0.43
+voids,amount,DOUBLE,178303,0,0.0,98068,55.0
+voids,employee_id,BIGINT,178303,0,0.0,0,0.0
+voids,manager_id,BIGINT,178303,0,0.0,0,0.0
+voids,void_cat_id,BIGINT,178303,0,0.0,0,0.0
+voids,void_cat_name,VARCHAR,178303,0,0.0,0,0.0
+voids,item_name,VARCHAR,178303,0,0.0,0,0.0
+voids,item_plu,BIGINT,178303,0,0.0,23489,13.17
+item_discounts,dt,DATE,275991,0,0.0,,
+item_discounts,check_id,DOUBLE,275991,0,0.0,0,0.0
+item_discounts,location_id,BIGINT,275991,0,0.0,0,0.0
+item_discounts,line_no,BIGINT,275991,0,0.0,0,0.0
+item_discounts,discount_id,BIGINT,275991,0,0.0,0,0.0
+item_discounts,amount,DOUBLE,275991,0,0.0,166381,60.28
+item_discounts,employee_id,BIGINT,275991,0,0.0,0,0.0
+item_discounts,manager_id,BIGINT,275991,0,0.0,0,0.0
+item_discounts,discount_name,VARCHAR,275991,0,0.0,0,0.0
+check_discounts,dt,DATE,240699,0,0.0,,
+check_discounts,check_id,DOUBLE,240699,0,0.0,0,0.0
+check_discounts,location_id,BIGINT,240699,0,0.0,0,0.0
+check_discounts,discount_id,BIGINT,240699,0,0.0,0,0.0
+check_discounts,amount,DOUBLE,240699,0,0.0,2,0.0
+check_discounts,employee_id,BIGINT,240699,0,0.0,2,0.0
+check_discounts,manager_id,BIGINT,240699,0,0.0,11467,4.76
+check_discounts,discount_name,VARCHAR,240699,0,0.0,0,0.0
+taxes,dt,DATE,2569636,0,0.0,,
+taxes,check_id,DOUBLE,2569636,0,0.0,0,0.0
+taxes,location_id,BIGINT,2569636,0,0.0,0,0.0
+taxes,tax_cat_id,BIGINT,2569636,0,0.0,0,0.0
+taxes,amount,DOUBLE,2569636,0,0.0,0,0.0
+taxes,tax_cat_name,VARCHAR,2569636,0,0.0,0,0.0
+employees (HR file),Id,BIGINT,156975,0,0.0,,
+employees (HR file),Name,VARCHAR,156975,0,0.0,,
+employees (HR file),LocationId,BIGINT,156975,0,0.0,,
+employees (HR file),LocationEmployeeId,VARCHAR,156975,0,0.0,,
+employees (HR file),PayrollEmployeeId,VARCHAR,156975,0,0.0,,
+employees (HR file),Deleted,BOOLEAN,156975,0,0.0,,
+employees (HR file),Borrowed,BOOLEAN,156975,0,0.0,,
+employees (HR file),HomeLocationId,BIGINT,156975,0,0.0,,
+employees (HR file),AlternateEmployeeId,VARCHAR,156975,0,0.0,,
+employees (HR file),PrimaryJobID,BIGINT,156975,0,0.0,,
+employees (HR file),DateOfBirth,DATE,156975,9184,5.85,,
+employees (HR file),HireDate,DATE,156975,5351,3.41,,
+employees (HR file),IsMinor,BOOLEAN,156975,0,0.0,,
+employees (HR file),IsEmancipated,JSON,156975,156975,100.0,,
+employees (HR file),JobID,BIGINT[],156975,0,0.0,,
+locations,Id,BIGINT,185,0,0.0,,
+locations,Name,VARCHAR,185,0,0.0,,
+locations,OpenDate,DATE,185,0,0.0,,
+locations,ClosedDate,DATE,185,127,68.65,,
+locations,TimeZoneName,VARCHAR,185,0,0.0,,
