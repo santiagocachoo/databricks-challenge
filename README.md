@@ -161,6 +161,17 @@ databricks bundle run daily_orchestration_job
 
 The CLI prints a link to the run. In the workspace: **Jobs & Pipelines** → `applebees_daily_orchestration` (task graph) and `applebees_risk_pipeline` (table graph with row counts and expectation results).
 
+### 4b. Second workspace (full 115-day run)
+
+`databricks.yml` has a second target, `full`, pointing to another workspace. Log in to it once (`databricks auth login --host <its URL>`), then add `-t full` to the bundle commands and `-p <profile>` to the `fs` commands:
+
+```bash
+databricks bundle deploy -t full
+P=<profile name of that workspace>
+for f in upload/all_days/*.json.gz; do databricks fs cp "$f" "$V/checks/$(basename $f)" -p $P; done
+databricks bundle run -t full daily_orchestration_job
+```
+
 ### 5. Add new days (incremental load)
 
 Upload more `checks_YYYY-MM-DD.json.gz` files to `checks/` and run the job again. Only the new files are read; nothing already loaded is reprocessed.

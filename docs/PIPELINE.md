@@ -12,7 +12,7 @@ Contents:
 7. The job: trigger, dependencies, failures and reruns
 8. Databricks features: what we used, where, and why
 9. Proof that the port is correct (parity with Phase 1)
-10. Results of the Databricks runs (Oct 28, 2026)
+10. Results of the Databricks runs (Oct 28, 2026): 14-day demo and full 115-day run
 11. Limits and what we would do next
 12. Questions we expect, with answers
 
@@ -25,7 +25,7 @@ Contents:
 - **No fraud labels.** Nothing says "this was fraud". The pipeline produces **risk signals** and a **risk score**: a reason to look, not proof.
 - **Phase 1 finding the pipeline is built around:** risk is about *who* and *where*, not *when*. Void rates barely move by hour or weekday (0.8–0.9%) but range 0.3–2.3% across stores and 0–7.9% across employees, and the signals stack up on the same employees (106 were top 10% on 3+ of 5 signals vs ~22 by chance).
 
-**What we load for the demo:** May 4–10, 2026 (7 days, 140,208 receipts, includes Mother's Day, the busiest day of the period), then May 11–17 as the incremental-load demo. Same code runs all 115 days; we kept the demo small because Databricks Free Edition has a daily compute quota shared by the whole team.
+**What we loaded:** two Databricks Free Edition workspaces, same code. **Demo workspace:** May 4–10, 2026 (7 days, includes Mother's Day), then May 11–17 to show incremental loading. **Full workspace** (a teammate's account, deployed with `databricks bundle deploy -t full`): all **115 days, 2,142,846 receipts**, so the demo workspace keeps its daily compute quota. The analysis numbers come from the full run.
 
 ## 2. The flow in one picture
 
@@ -191,11 +191,24 @@ Phase 1 cleaned the data with DuckDB on a laptop. Phase 2 re-implements the same
 
 Two independent implementations give the same numbers to the cent.
 
-## 10. Results of the Databricks runs (Oct 28, 2026)
+**Then on the full data, in Databricks (115 days):**
+
+| Number (Apr 28 – Aug 20) | Phase 1 (DuckDB) | Phase 2 (Databricks) |
+|---|---|---|
+| Raw receipts | 2,142,846 | 2,142,846 |
+| Exact copies removed | 229 | 229 |
+| Clean receipts | 2,142,617 | 2,142,617 |
+| Receipts whose money identity balances | 99.996% | 99.996% |
+| Employees compared ($5K+ sales, 50+ card payments) | 2,516 | 2,516 |
+| Employees top 10% on 3+ of 5 signals | 106 | 106 |
+| Munster void rate / vs chain median | 2.29% / 2.9× | 2.29% / 2.87× |
+| Top 5 stores by void rate | Munster, Grand Island, Clinton, Columbus, Corpus Christi | same 5, same order |
+
+## 10. Results of the Databricks runs (Oct 28, 2026): 14-day demo and full 115-day run
 
 Workspace: Databricks Free Edition, catalog `workspace`. Screenshots in [`docs/img/`](img/).
 
-### Runs
+### Demo workspace runs (14 days, `dbc-992f5532-5ec3`)
 
 | # | What | Result | Evidence |
 |---|---|---|---|
@@ -227,7 +240,7 @@ Pipeline graph with every table and dependency: `05_pipeline_graph.png`.
 
 Every total matches the Phase 1 tables for the same 14 days (raw 276,695, clean 276,671).
 
-### Where to look first: stores (`gold.mv_store_risk_score`, `09_store_risk_ranking.png`)
+### Demo workspace: stores, 14 days (`gold.mv_store_risk_score`, `09_store_risk_ranking.png`)
 
 | Rank | Store | Receipts | Void % | Void vs chain median | Discount % | Walkout % | Score |
 |---|---|---|---|---|---|---|---|
@@ -244,7 +257,7 @@ Every total matches the Phase 1 tables for the same 14 days (raw 276,695, clean 
 
 Read it as: the top stores are high on **several** signals at once (Hilliard Rome: discounts, walkouts and voids all above the chain). **Munster** is the outlier on one signal: it voids 3.27% of gross sales, 4.1× the chain median, which matches Phase 1 (2.29% over 115 days, 2.9× the median, every month). The pipeline confirms in a few seconds what took Phase 1 a manual analysis.
 
-### Who to look at first: employees (`gold.mv_employee_risk_score`, `10_employee_risk_tiers.png`)
+### Demo workspace: employees, 14 days (`gold.mv_employee_risk_score`, `10_employee_risk_tiers.png`)
 
 2,114 employees met the (scaled) sales and card-payment bar for May 4–17.
 
@@ -258,10 +271,54 @@ Read it as: the top stores are high on **several** signals at once (Hilliard Rom
 - If the 5 signals were unrelated, about **18** employees would be top 10% on 3+ of them by chance (0.86% × 2,114). We see **62, 3.4× chance**, the same stacking Phase 1 found over 115 days (106 vs ~22). The pattern holds in two weeks of data, computed automatically by the pipeline.
 - Employee IDs exist in the table for managers, but stay off slides.
 
+
+### Full run: all 115 days (teammate's workspace, `dbc-23a888d3-fb75`)
+
+| # | What | Result | Evidence |
+|---|---|---|---|
+| 3 | `bundle deploy -t full` (6 resources created), uploaded 115 day files (969 MB gzipped), `bundle run -t full` | Pipeline **succeeded in 10.5 min** within the Free Edition quota, but Databricks had to **retry it automatically** ("Refresh all (Automatic recovery)": two failed attempts, then success). The **quality gate failed 2 of 12 checks** and blocked the job: 229 exact copies were still in `silver.mv_checks`, and 0% of receipts had a store name | `11_full_run_gate_blocked.png`, `12_full_run_gate_10_of_12.png` |
+| 3b | Diagnosis: bronze, the copy list and the stores table were all correct; only `mv_checks` was wrong (2,142,846 rows instead of 2,142,617, every store name empty). During the automatic recovery `mv_checks` was recomputed as if `mv_receipt_copies` and `mv_stores` were still empty. The same code passed 12/12 in the demo workspace, so it is the recovery, not the logic (we did not confirm the exact internal mechanism) | | `13_full_run_mv_checks_wrong_counts.png`, `14_full_run_pipeline_graph_recovery.png` |
+| 3c | Fix: **full refresh of the 6 affected tables only** (`mv_checks` + the 5 gold tables; no re-ingestion of the 115 files), then **Repair run** of the quality gate | Counts exactly as Phase 1, gate **12 of 12**, job green | `15_full_refresh_selected_tables.png`, `16_full_run_counts_fixed.png`, `17_full_run_job_green.png` |
+
+**Why this matters:** the safety net worked on real data. A silent error in the main table would have produced wrong risk scores; instead the gate stopped the job, the cause was found with two SQL counts, and only the broken tables were rebuilt. Lesson for production: after an automatic recovery, the gate is what tells you whether the result can be trusted.
+
+### Stores, 115 days (`18_full_store_risk_ranking.png`, `20_full_top_void_stores.png`)
+
+| Rank | Store | Receipts | Void % | Void vs chain | Discount % | Walkout % | Score |
+|---|---|---|---|---|---|---|---|
+| 1 | Ireland Road | 16,385 | 1.12 | 1.40× | 7.20 | 0.189 | 91.9 |
+| 2 | Hilliard Rome | 12,258 | 1.14 | 1.42× | 5.58 | 0.220 | 90.3 |
+| 3 | Danville | 13,990 | 1.13 | 1.41× | 5.74 | 0.136 | 86.5 |
+| 4 | Desert Sky | 15,721 | 1.04 | 1.30× | 3.98 | 0.280 | 86.0 |
+| 5 | **Munster** | 15,858 | **2.29** | **2.87×** | 4.67 | 0.233 | 83.8 |
+| 6 | Morse Road | 18,201 | 0.73 | 0.91× | 5.82 | **0.626** | 81.0 |
+| 7 | Frankfort | 10,443 | 1.00 | 1.25× | 5.23 | 0.153 | 80.8 |
+| 8 | Corpus Christi | 17,914 | 1.59 | 1.99× | 4.27 | 0.296 | 78.6 |
+| 9 | Chillicothe | 13,090 | 1.01 | 1.26× | 5.19 | 0.122 | 77.5 |
+| 10 | Nicholasville | 9,779 | 1.55 | 1.93× | 4.55 | 0.092 | 76.8 |
+
+- **Two kinds of risky store.** Most of the top 10 are above the chain on *several* signals at once (Ireland Road: 7.2% discounts, the highest; voids 1.4× the median). Others stand out on *one*: **Munster** voids 2.29% of sales, 2.87× the chain median; **Morse Road** has normal voids but the highest walkout rate in the top 10 (0.63% of receipts).
+- **Top 5 by void rate:** Munster 2.29%, Grand Island 1.73%, Clinton 1.69%, Columbus 1.65%, Corpus Christi 1.59%: exactly the Phase 1 list. The pipeline now produces it automatically every day.
+- Hilliard Rome, Desert Sky, Danville, Chillicothe and Munster were also in the 14-day top 10: the ranking is stable.
+
+### Employees, 115 days (`19_full_employee_risk_tiers.png`)
+
+2,516 employees with $5,000+ in sales and 50+ card payments (the Phase 1 bar).
+
+| Tier | Employees | Avg score | Avg void % | Avg walkout % | Avg discount % | Gross sales |
+|---|---|---|---|---|---|---|
+| review first (top 10% on 3+ of 5 signals) | **106** (4.2%) | 78.2 | **2.26** | **0.661** | **7.56** | $2.50M (2.9%) |
+| watch (top 10% on 2) | 182 | 67.5 | 1.51 | 0.280 | 5.63 | $5.86M |
+| normal | 2,228 | 43.0 | 0.86 | 0.087 | 3.02 | $77.39M |
+
+- The 106 *review first* employees void **2.6× as much** of their sales as everyone else (2.26% vs 0.86%), give **2.5× the discounts** (7.56% vs 3.02%) and have **7.6× the walkout rate** (0.66% vs 0.09% of receipts), while ringing **2.9% of sales**. A manager can start with 106 people instead of 2,516.
+- If the 5 signals were unrelated, about **22** employees would be top 10% on 3 or more by chance (0.86% × 2,516). The pipeline finds **106, 4.9× chance**: exactly the Phase 1 number, now produced automatically.
+- Employee IDs exist in the table for managers, but stay off slides.
+
 ## 11. Limits and what we would do next
 
-- **Demo scope:** 7 + 7 days instead of 115, because of the Free Edition compute quota. The code is the same; loading the rest is uploading more files.
-- **7-day rates are noisy.** The employee bar is scaled to the days loaded; scores stabilize as days are added.
+- **Free Edition limits:** the full load needed an automatic recovery, and the recovery left one table wrong until we rebuilt it (section 10). On a paid workspace we would size compute for the initial backfill and keep the gate as the final check.
+- **Short windows are noisy.** With 14 days the employee rates move more than with 115; the bar is scaled to the days loaded, and the full run gives the reliable numbers.
 - **Job roles are unknown** (no lookup for job IDs), so part of a signal may come from the role (e.g. bartenders handle cash and voids).
 - **Not built yet:** manager–employee approval pairs, the Munster (store 80) deep dive, repeated tip padding, a Databricks dashboard / Genie space on the gold tables, alerting on score changes.
 
@@ -269,6 +326,8 @@ Read it as: the top stores are high on **several** signals at once (Hilliard Rom
 
 - **"Is this fraud?"** No labels exist, so we can't say. The score ranks where to look first; a manager confirms.
 - **"Why not delete the bad rows?"** In fraud work the odd rows are the evidence. We flag and count them (WARN expectations); only exact copies are removed, and they're listed.
+- **"Did you run all the data?"** Yes: all 115 days (2.14M receipts) in a second workspace, deployed from the same repo with one command. The numbers match Phase 1 exactly. The demo workspace shows incremental loading with 2 weeks.
+- **"What went wrong?"** On the full load, Databricks retried the pipeline automatically and one table came out wrong. The quality gate caught it and blocked the job; we rebuilt only the affected tables and it passed. That's the safety net doing its job.
 - **"Why streaming if the data is historical?"** In production a new file lands every day. Auto Loader reads only new files; we show it by loading a second week and seeing only those 7 files processed.
 - **"Why materialized views in silver and gold?"** Finding copies, totaling receipts and ranking employees need whole groups of rows, which append-only streaming can't recompute when inputs change. MVs can.
 - **"What happens if the job fails halfway?"** The pipeline retries once; checkpoints mean nothing is loaded twice; the quality gate blocks bad output and e-mails us. Reruns are idempotent.

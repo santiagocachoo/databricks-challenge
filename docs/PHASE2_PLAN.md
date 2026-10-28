@@ -7,7 +7,7 @@
 | Topic | Decision | Why |
 |---|---|---|
 | Workspace | Databricks **Free Edition** (owner's account, teammates invited); catalog `workspace` | No workspace was provided by the organizers |
-| Data loaded | **May 4–10** (7 days, 140,208 receipts), then **May 11–17** to demo incremental loading | Free Edition has a daily compute quota shared by the team; same code runs all 115 days |
+| Data loaded | Demo workspace (`dbc-992f5532-5ec3`): **May 4–10**, then **May 11–17** to demo incremental loading. Full workspace (teammate, `dbc-23a888d3-fb75`): **all 115 days** | Free Edition has a daily compute quota per workspace; same code, `-t full` target |
 | Repo layout | Organizers' template + `bronze/`, `src/validation/`, `databricks.yml`; Phase 1 moved to `phase1_eda/` | Template has no raw layer; bundles need `databricks.yml` |
 | Deployment | Databricks Asset Bundles from the CLI (`databricks bundle deploy`) | Everything as code, one command |
 | Risk score | Average percentile on 5 signals + top-10% count + tier | No labels: explainable beats a black box |
@@ -32,7 +32,7 @@
 - [x] Run the job (week 1): pipeline green; quality gate caught a false positive (store/channel `Name`), fixed, Repair run → 12/12
 - [x] Screenshots in `docs/img/` (job graph, gate output, pipeline graph, incremental run, data-quality summary, store ranking, employee tiers)
 - [x] Upload week 2, run again: `st_raw_checks` wrote 136K rows = only the new week
-- [ ] Optional: full 115-day run in a teammate's workspace (`databricks bundle deploy -t full`, files in `upload/all_days/`)
+- [x] Full 115-day run in a teammate's workspace (`-t full`): gate caught a wrong `mv_checks` after Databricks' automatic recovery → full refresh of 6 tables → 12/12; numbers identical to Phase 1
 - [ ] Optional: dashboard on gold tables
 - [ ] Deck (6 sections below) + rehearsal ×2
 - [ ] Commit and push (user)
@@ -73,19 +73,19 @@ Length is unknown; this fits ~8–10 minutes. Cut slide 7 or 9 if it is 5 minute
 | 9 | Analysis | Who and where to look first | Store ranking vs chain median (Munster voids 3.27%, 4.1× the chain median); 62 *review first* employees: 3× the void rate, 13× the walkout rate. | Gold query results / dashboard |
 | 10 | Conclusion | Value + next steps | Value: a daily, trustworthy, explainable risk ranking. Next: all 115 days, manager–employee approval pairs, Munster deep dive, dashboard + alerts. | 3 bullets |
 
-### Numbers for the slides (Databricks run, May 4–17, 276,671 clean receipts)
+### Numbers for the slides (Databricks)
 
-Full tables and screenshots: [`PIPELINE.md` §10](PIPELINE.md#10-results-of-the-databricks-runs-oct-28-2026).
+Full tables and screenshots: [`PIPELINE.md` §10](PIPELINE.md). Analysis numbers come from the **full 115-day run**; the incremental demo from the 14-day workspace.
 
 | Slide | Number | Screenshot |
 |---|---|---|
-| 3 Job | 2 tasks, pipeline 3–4 min, gate 25 s; gate blocked run 1 → fix → Repair run re-ran only the gate | `01`, `03` |
+| 3 Job | 2 tasks; demo pipeline 3–4 min, full 115 days 10.5 min, gate 25 s. Gate blocked twice: a false alarm in our privacy check (fixed), then a real error after Databricks' automatic recovery on the full load (fixed by refreshing only 6 tables) | `01`, `03`, `12`, `16`, `17` |
 | 4 Bronze | Week 2 load wrote 136K rows = only the 136,487 new receipts (not 276,695) | `06` |
-| 5 Silver | 276,695 raw → 24 exact copies removed → 276,671 clean, 0 unreconciled | `08` |
-| 6 Quality | Gate 12/12; 99.998% balanced; 1.9% flagged and kept; 0 rescued rows; 0 personal-data columns | `04`, `08` |
-| 7 Parity | Spark = Phase 1 to the cent (May 4–10 locally; May 4–17 totals in Databricks) | PIPELINE §9 |
-| 9 Stores | Munster voids 3.27% of sales, 4.1× the chain median (Phase 1: 2.9× over 115 days); top 3 by score: Hilliard Rome, Frankfort, Richmond IN | `09` |
-| 9 Employees | 62 of 2,114 employees are *review first*: 3× the void rate, 13× the walkout rate, 2.7% of sales; 62 vs ~18 by chance (3.4×) | `10` |
+| 5 Silver | 115 days: 2,142,846 raw → 229 exact copies removed → 2,142,617 clean, 0 unreconciled | `16` |
+| 6 Quality | Gate 12/12; 99.996% balanced; 2.0% flagged and kept; 0 rescued rows; 0 personal-data columns | `04`, `08`, `12` |
+| 7 Parity | Identical to Phase 1 on 115 days: 2,142,617 clean, 229 copies, 2,516 employees, 106 flagged, same top-5 void stores | PIPELINE §9 |
+| 9 Stores | Top score: Ireland Road (7.2% discounts), Hilliard Rome, Danville. Munster voids 2.29%, 2.87× the chain median; Morse Road walkouts 0.63% | `18`, `20` |
+| 9 Employees | 106 of 2,516 are *review first*: 2.6× the void rate, 2.5× discounts, 7.6× walkouts, 2.9% of sales; 106 vs ~22 by chance (4.9×) | `19` |
 
 Queries used (SQL Editor):
 

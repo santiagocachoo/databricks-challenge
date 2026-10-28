@@ -27,4 +27,4 @@ targets:
   # demo workspace above keeps its compute quota. Deploy with: databricks bundle deploy -t full
   full:
     workspace:
-      host: https://REPLACE_WITH_TEAMMATE_WORKSPACE.cloud.databricks.com
+      host: https://dbc-23a888d3-fb75.cloud.databricks.com
