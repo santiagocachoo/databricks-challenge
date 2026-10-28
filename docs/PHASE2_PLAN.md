@@ -33,7 +33,7 @@
 - [x] Screenshots in `docs/img/` (job graph, gate output, pipeline graph, incremental run, data-quality summary, store ranking, employee tiers)
 - [x] Upload week 2, run again: `st_raw_checks` wrote 136K rows = only the new week
 - [x] Full 115-day run in a teammate's workspace (`-t full`): gate caught a wrong `mv_checks` after Databricks' automatic recovery → full refresh of 6 tables → 12/12; numbers identical to Phase 1
-- [ ] Optional: dashboard on gold tables
+- [x] AI/BI dashboard on the gold tables (full workspace): 4 counters, store ranking, void vs chain, employee tiers, daily trend (`22`)
 - [ ] Deck (6 sections below) + rehearsal ×2
 - [ ] Commit and push (user)
 
@@ -86,6 +86,7 @@ Full tables and screenshots: [`PIPELINE.md` §10](PIPELINE.md). Analysis numbers
 | 7 Parity | Identical to Phase 1 on 115 days: 2,142,617 clean, 229 copies, 2,516 employees, 106 flagged, same top-5 void stores | PIPELINE §9 |
 | 9 Stores | Top score: Ireland Road (7.2% discounts), Hilliard Rome, Danville. Munster voids 2.29%, 2.87× the chain median; Morse Road walkouts 0.63% | `18`, `20` |
 | 9 Employees | 106 of 2,516 are *review first*: 2.6× the void rate, 2.5× discounts, 7.6× walkouts, 2.9% of sales; 106 vs ~22 by chance (4.9×) | `19` |
+| 9 Dashboard | The whole analysis on one page, live on the gold tables | `22` |
 
 Queries used (SQL Editor):
 

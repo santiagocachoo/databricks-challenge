@@ -315,12 +315,26 @@ Read it as: the top stores are high on **several** signals at once (Hilliard Rom
 - If the 5 signals were unrelated, about **22** employees would be top 10% on 3 or more by chance (0.86% × 2,516). The pipeline finds **106, 4.9× chance**: exactly the Phase 1 number, now produced automatically.
 - Employee IDs exist in the table for managers, but stay off slides.
 
+### Dashboard on the gold tables (full workspace, `22_dashboard_overview.png`)
+
+An AI/BI dashboard, **"Applebee's register risk (115 days)"**, reads the gold tables directly, so it is up to date after every job run. It was laid out with Genie (Databricks' assistant) from 5 SQL datasets we wrote:
+
+| Widget | Dataset (query on gold) | What it shows |
+|---|---|---|
+| 4 counters | `kpis` | 2.14M clean receipts · 99.996% balance · 106 employees to review first · 229 exact copies removed |
+| Horizontal bar | `store_scores` (`mv_store_risk_score`, top 10) | Top 10 stores by risk score: Ireland Road 91.9 … Nicholasville 76.8 |
+| Bar | `void_vs_chain` | Void rate vs the chain median: Munster 2.87×, then Grand Island, Clinton, Columbus, Corpus Christi |
+| Grouped bar | `tier_comparison` (`mv_employee_risk_score`) | Void %, discount % and walkouts per 100 receipts by tier: review first vs watch vs normal |
+| Line | `daily_trend` (`mv_daily_store_kpis`) | Chain void % and discount % for each of the 115 days |
+
+Reading the line chart honestly: the **void rate is flat** all period (about 0.7–1.0% of sales every day). The **discount rate** is steady around 3–4% but has a few spikes in July (up to about 6%), most likely promotions; worth a question to the organizers. Neither depends on the weekday, which is the Phase 1 "who and where, not when" finding.
+
 ## 11. Limits and what we would do next
 
 - **Free Edition limits:** the full load needed an automatic recovery, and the recovery left one table wrong until we rebuilt it (section 10). On a paid workspace we would size compute for the initial backfill and keep the gate as the final check.
 - **Short windows are noisy.** With 14 days the employee rates move more than with 115; the bar is scaled to the days loaded, and the full run gives the reliable numbers.
 - **Job roles are unknown** (no lookup for job IDs), so part of a signal may come from the role (e.g. bartenders handle cash and voids).
-- **Not built yet:** manager–employee approval pairs, the Munster (store 80) deep dive, repeated tip padding, a Databricks dashboard / Genie space on the gold tables, alerting on score changes.
+- **Not built yet:** manager–employee approval pairs, the Munster (store 80) deep dive, repeated tip padding, the dashboard as code in the bundle, alerts on score changes.
 
 ## 12. Questions we expect, with answers
 

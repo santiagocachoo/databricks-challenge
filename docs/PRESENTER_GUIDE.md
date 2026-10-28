@@ -31,6 +31,7 @@ Read time: about 15 minutes. This is everything you need to present Phase 2 and 
 | **Asset Bundle** | The pipeline, job and storage written as files in the repo (`databricks.yml`, `resources/`) and deployed with one command. Nothing was set up by clicking. |
 | **Serverless** | Databricks runs the compute for us; there are no servers to configure. |
 | **Free Edition** | The free Databricks account we used. It has a daily compute limit, so we used two: one for the demo (14 days, incremental loading) and a teammate's for the full 115 days. Same code, deployed with one command to each. |
+| **AI/BI dashboard** | Databricks' built-in dashboards. Ours reads the gold tables and shows the counters, store ranking, employee tiers and daily trend. We wrote the 5 queries; Genie (the built-in assistant) laid out the charts. |
 | **Risk score** | 0–100 per employee or store: the average of where they rank (percentile) on 5 signals. 50 = typical, near 100 = high on everything. |
 | **Signals** (all are rates) | Void $ ÷ sales · discount $ ÷ sales · walkouts per receipt · fully comped receipts per receipt · card tips larger than the bill per card payment. |
 
@@ -76,7 +77,8 @@ About 8–10 minutes. If the slot is 5 minutes, merge slides 4+5 and drop slide 
 
 **Slide 9: Who and where to look first**
 - *Say:* "On all 115 days, out of 2,516 employees, 106 are flagged *review first*: top 10% on three or more signals. They void 2.6 times as much as the rest, discount 2.5 times as much and have 7.6 times the walkouts, while ringing under 3% of sales. By chance we'd expect about 22; we see 106, five times chance. For stores there are two patterns: stores high on several signals, like Ireland Road and Hilliard Rome at the top of the score, and stores with one extreme signal, like Munster, which voids 2.3% of sales, almost three times the chain median, every month."
-- *Show:* `18_full_store_risk_ranking.png`, `19_full_employee_risk_tiers.png` (tiers only, no IDs), `20_full_top_void_stores.png`.
+- *Show:* **the dashboard** `22_dashboard_overview.png`: it reads the gold tables, so it updates after every run. Point at the 4 counters, then the store bars, then the employee tiers. Backup: `18`, `19`, `20` (SQL results).
+- *If asked about the line chart:* voids are flat every day; discounts are steady at 3–4% with a few July spikes (likely promotions). Neither depends on the weekday.
 
 **Slide 10: Conclusion**
 - *Say:* "The value is a daily, trustworthy and explainable risk ranking: a manager starts with 106 people instead of 2,516, and an auditor with a short list of stores. Next steps: manager–employee approval pairs, a Munster deep dive, a dashboard and alerts on the gold tables, and a paid workspace sized for backfills."
