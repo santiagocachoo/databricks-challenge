@@ -329,7 +329,7 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 
 ## 12. Cleaning results (step 1, done Oct 7)
 
-`eda_work/scripts/clean.py` builds the clean layer in about 20 seconds. Nothing weird is deleted; only exact copies are removed.
+`phase1_eda/scripts/clean.py` builds the clean layer in about 20 seconds. Nothing weird is deleted; only exact copies are removed.
 
 | Step | Receipts |
 |---|---|
@@ -397,9 +397,9 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 
 ## 13. Charts and the presentation (done Oct 7–8)
 
-12 charts in `eda_work/charts/` (2400 × 1350 px), in the order they appear in the 11-slide deck. The full storyboard, appendix and cut order are in `EDA_PLAN.md`, and the slide-by-slide deck plan is in `docs/DECK_GUIDE.md` (it embeds the charts).
+12 charts in `phase1_eda/charts/` (2400 × 1350 px), in the order they appear in the 11-slide deck. The full storyboard, appendix and cut order are in `EDA_PLAN.md`, and the slide-by-slide deck plan is in `docs/DECK_GUIDE.md` (it embeds the charts).
 
-| Slide | Chart (`eda_work/charts/`) | What it shows |
+| Slide | Chart (`phase1_eda/charts/`) | What it shows |
 |---|---|---|
 | 1 | — (KPI strip) | 127 stores · 115 days · 2.1M receipts · $99.3M collected; where can money leak at the register? |
 | 2 | `00_data_model.png` | Every detail table links to one receipt (date + store + receipt #); 4 lookup tables turn IDs into names |
@@ -416,13 +416,13 @@ The top 5% of employees account for 39% of walked-out receipts, 20% of void doll
 | A2 | `07_discounts_and_voids.png` | Manager comps top discounts ($3.02M); order changes top voids ($0.73M) |
 | A3 | `10_munster_by_month.png` | Munster is high every month, about 2.8× the other stores |
 
-Rebuild all charts with `python eda_work/scripts/charts.py` (about 5 seconds), or one chart with e.g. `python eda_work/scripts/charts.py 06`.
+Rebuild all charts with `python phase1_eda/scripts/charts.py` (about 5 seconds), or one chart with e.g. `python phase1_eda/scripts/charts.py 06`.
 
 The charts use one style: gray data, one blue accent on what the title is about, green and red only for money added or taken off, and the finding in the title. In the clean data there are 84 discount names with amounts above $0.
 
 ## 14. Technical reference
 
-- **Location:** `eda_work/` in the repo (`databricks-challenge`). Use `clean/` for analysis; `parquet/` is the raw flattened copy. Data folders are gitignored; see `README.md` to get them.
+- **Location:** `phase1_eda/` in the repo (`databricks-challenge`). Use `clean/` for analysis; `parquet/` is the raw flattened copy. Data folders are gitignored; see `README.md` to get them.
   - `parquet/<table>/<date>.parquet`: the 7 tables, plus `parquet/check_summary/check_summary.parquet`.
   - `scripts/build_all.py`: rebuilds everything in one command (convert → check summary → clean), about 4–6 minutes from scratch. Tested: a rebuild reproduces identical rows and reports.
   - `scripts/check_setup.py`: checks Python, libraries, raw data and built tables, and says what to fix.
@@ -434,8 +434,8 @@ The charts use one style: gray data, one blue accent on what the title is about,
   - `scripts/q.py`: registers the raw tables for DuckDB SQL (used by `p1`–`p12`, `e1`–`e3`).
   - Setup for teammates: `README.md` at the repo root.
   - `scripts/p1.py`…`p12.py`: the profiling queries behind every number here.
-- **Open in pandas:** `pd.read_parquet("eda_work/clean/checks.parquet")`. For `items` (28.6M rows), load only the columns you need, or use DuckDB.
-- **DuckDB:** an SQL engine that runs inside Python and queries Parquet files directly without loading them into memory: `duckdb.sql("SELECT ... FROM 'eda_work/clean/items.parquet'")`.
+- **Open in pandas:** `pd.read_parquet("phase1_eda/clean/checks.parquet")`. For `items` (28.6M rows), load only the columns you need, or use DuckDB.
+- **DuckDB:** an SQL engine that runs inside Python and queries Parquet files directly without loading them into memory: `duckdb.sql("SELECT ... FROM 'phase1_eda/clean/items.parquet'")`.
 - **Column names in Parquet:** snake_case, e.g. `check_id`, `location_id`, `sold_price`, `gratuity`, `void_cat_name`, `discount_name`, `pay_cat_name`. Every table has `dt` (business date).
 
 ## 15. Open questions for the organizers

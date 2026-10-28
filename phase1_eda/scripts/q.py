@@ -5,7 +5,7 @@ con = duckdb.connect()
 con.execute(f"SET memory_limit='2GB'; SET threads=4; SET temp_directory='{DUCK_TMP}'")
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]  # repo root (Databricks_challenge/)
-P = str(REPO / "eda_work" / "parquet")
+P = str(REPO / "phase1_eda" / "parquet")
 CK = f"{P}/check_summary/check_summary.parquet"  # one row per check with totals (built by p4.py)
 for t in ["checks","items","item_discounts","check_discounts","payments","taxes","voids"]:  # check_summary is read separately via CK
     con.execute(f"CREATE VIEW {t} AS SELECT * FROM read_parquet('{P}/{t}/*.parquet', union_by_name=true)")

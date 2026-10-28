@@ -1,8 +1,8 @@
 """
 Step 3 + 4: build every chart for the EDA presentation from the clean tables.
-Run:     python eda_work/scripts/charts.py            (all charts, ~30 s)
-         python eda_work/scripts/charts.py 06 09      (only charts whose file name starts with 06 or 09)
-Output:  eda_work/charts/NN_name.png   (16:9, 2400 x 1350 px, ready for slides)
+Run:     python phase1_eda/scripts/charts.py            (all charts, ~30 s)
+         python phase1_eda/scripts/charts.py 06 09      (only charts whose file name starts with 06 or 09)
+Output:  phase1_eda/charts/NN_name.png   (16:9, 2400 x 1350 px, ready for slides)
 Style:   gray for data, ONE blue accent on what the title is about, green/red only for money in/out.
 """
 import sys
@@ -15,8 +15,8 @@ import matplotlib.ticker as mt
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
-C = (REPO / "eda_work" / "clean").as_posix()
-OUT = REPO / "eda_work" / "charts"
+C = (REPO / "phase1_eda" / "clean").as_posix()
+OUT = REPO / "phase1_eda" / "charts"
 OUT.mkdir(exist_ok=True)
 SRC = "Source: RMH Applebee's POS data, 127 stores, Apr 28 – Aug 20, 2026 (115 days) · clean layer"
 
@@ -127,7 +127,7 @@ def c01():
     n_emp = q(f"SELECT count(*) FROM read_parquet('{C}/employees.parquet')")[0][0]
     n_sto = q(f"SELECT count(*) FROM read_parquet('{C}/stores.parquet')")[0][0]
     n_open = q(f"SELECT count(*) FROM read_parquet('{C}/stores.parquet') WHERE closed_date IS NULL")[0][0]
-    mv = REPO / "eda_work" / "reports" / "missing_values.csv"
+    mv = REPO / "phase1_eda" / "reports" / "missing_values.csv"
     hire = q(f"SELECT n_null FROM read_csv('{mv.as_posix()}') WHERE column_name='HireDate'")[0][0]
     groups = [
         ("Always empty: dropped", BLUE, [
@@ -167,7 +167,7 @@ def c01():
 # ================================================================= 02 cleaning funnel (step 3)
 def c02():
     import json
-    s = json.loads((REPO / "eda_work" / "reports" / "cleaning_summary.json").read_text())
+    s = json.loads((REPO / "phase1_eda" / "reports" / "cleaning_summary.json").read_text())
     f = fig(f"Only {s['exact_copies_removed']} receipts removed; {s['receipts_with_any_data_quality_flag']/s['clean_receipts']:.0%} flagged and kept, not deleted",
             "Left: receipts at each cleaning step. Right: why the flagged receipts were flagged (a receipt can have several flags)")
     steps = [("Raw receipts", s["raw_receipts"], GRAY_D), ("Exact copies removed", s["exact_copies_removed"], BAD),

@@ -100,18 +100,18 @@ Each lever below has an honest use and a theft version.
 
 ## How to open the data yourself
 
-Setup is in `README.md`: clone the repo, create the Python environment, then either unzip `clean.zip` (shared by the team; fastest) or rebuild with `python eda_work/scripts/build_all.py`. Check it worked with `python eda_work/scripts/check_setup.py`.
+Setup is in `README.md`: clone the repo, create the Python environment, then either unzip `clean.zip` (shared by the team; fastest) or rebuild with `python phase1_eda/scripts/build_all.py`. Check it worked with `python phase1_eda/scripts/check_setup.py`.
 
-The clean tables are in `eda_work/clean/`. Parquet is like CSV, but compressed and fast: the 11 GB became about 300 MB.
+The clean tables are in `phase1_eda/clean/`. Parquet is like CSV, but compressed and fast: the 11 GB became about 300 MB.
 
 ```python
 import pandas as pd
-checks = pd.read_parquet("eda_work/clean/checks.parquet")      # 2.1M receipts, 53 columns incl. totals and flags
-voids  = pd.read_parquet("eda_work/clean/voids.parquet")       # 178K voided items, merged reasons
-disc   = pd.read_parquet("eda_work/clean/discounts.parquet")   # item + check discounts in one table
-pays   = pd.read_parquet("eda_work/clean/payments.parquet")    # positive tip, tip_pct, method_group
+checks = pd.read_parquet("phase1_eda/clean/checks.parquet")      # 2.1M receipts, 53 columns incl. totals and flags
+voids  = pd.read_parquet("phase1_eda/clean/voids.parquet")       # 178K voided items, merged reasons
+disc   = pd.read_parquet("phase1_eda/clean/discounts.parquet")   # item + check discounts in one table
+pays   = pd.read_parquet("phase1_eda/clean/payments.parquet")    # positive tip, tip_pct, method_group
 # items has 28.6M rows: load only the columns you need
-items = pd.read_parquet("eda_work/clean/items.parquet", columns=["location_id", "item_name", "line_type", "sold_price"])
+items = pd.read_parquet("phase1_eda/clean/items.parquet", columns=["location_id", "item_name", "line_type", "sold_price"])
 ```
 
 The key to join tables is `dt` + `location_id` + `check_id`.
@@ -136,9 +136,9 @@ Appendix for questions: the hour heatmap (`05`), discount and void reasons (`07`
 
 ## Status and what's next
 
-- [x] Clean tables and duplicates settled (`eda_work/clean/`)
+- [x] Clean tables and duplicates settled (`phase1_eda/clean/`)
 - [x] Repo ready for the team: `README.md`, one-command rebuild, setup checker
-- [x] All 12 charts in `eda_work/charts/`
+- [x] All 12 charts in `phase1_eda/charts/`
 - [x] Storyboard and deck guide (`docs/DECK_GUIDE.md`)
 - [x] Deck built and presented on Oct 8
 - [ ] Phase 2: waiting for the organizers' brief. Our idea: combine the risk signals into one risk score per employee and per store (backlog in `EDA_PLAN.md`)

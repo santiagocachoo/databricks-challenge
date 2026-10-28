@@ -4,16 +4,16 @@
 # Raw challenge data (11 GB, provided by organizers - do not commit or push)
 Applebees Challenge/
 
-# Built data: regenerate with `python eda_work/scripts/build_all.py`
-eda_work/parquet/
+# Built data: regenerate with `python phase1_eda/scripts/build_all.py`
+phase1_eda/parquet/
 
 # Python
 __pycache__/
 *.pyc
 *.tmp
 
-# Clean tables: regenerate with `python eda_work/scripts/build_all.py` (or get clean.zip from a teammate)
-eda_work/clean/
+# Clean tables: regenerate with `python phase1_eda/scripts/build_all.py` (or get clean.zip from a teammate)
+phase1_eda/clean/
 
 # Python virtual environment (each person creates their own)
 .venv/
@@ -21,3 +21,6 @@ venv/
 
 # Zipped data shared over Drive, never through git
 *.zip
+
+# Compressed upload copies of the raw data for the Databricks Volume (made from Applebees Challenge/)
+upload/

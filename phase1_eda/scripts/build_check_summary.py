@@ -1,15 +1,15 @@
 """
-Build eda_work/parquet/check_summary/check_summary.parquet:
+Build phase1_eda/parquet/check_summary/check_summary.parquet:
 one row per receipt with its money totals (item sales, gross, discounts, tax, payments, tips, voids).
-Needs: eda_work/parquet/ from convert.py.  Used by: clean.py.  Takes about 30-60 s.
+Needs: phase1_eda/parquet/ from convert.py.  Used by: clean.py.  Takes about 30-60 s.
 """
 import tempfile
 import duckdb
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-P = (REPO / "eda_work" / "parquet").as_posix()
-OUT = REPO / "eda_work" / "parquet" / "check_summary"
+P = (REPO / "phase1_eda" / "parquet").as_posix()
+OUT = REPO / "phase1_eda" / "parquet" / "check_summary"
 OUT.mkdir(parents=True, exist_ok=True)
 DUCK_TMP = (Path(tempfile.gettempdir()) / "duckdb_spill").as_posix()
 

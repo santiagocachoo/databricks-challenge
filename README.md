@@ -1,260 +1,204 @@
-# Applebee's Fraud Detection: Data Challenge (team repo)
+# Applebee's Risk Signals: Databricks Pipeline
 
-Tec de Monterrey × Sun Holdings × Databricks Data Challenge · Applebee's AI-Powered Fraud Detection track.
+Tec de Monterrey × Sun Holdings × Databricks Data Challenge · **Applebee's AI-Powered Fraud Detection** track · Phase 2 (pipeline)
 
-This repo holds our code and docs. **The data is not in git.** You add it yourself in step 3 below.
+**What it does:** takes the raw point-of-sale (POS) receipts of 127 RMH Applebee's restaurants and turns them into tables that answer one business question: **where can money leak at the register (voids, discounts, comps, walkouts, tips, refunds), and who and where should a manager look at first?**
 
-**New here?** Read [`docs/TEAM_BRIEFING.md`](docs/TEAM_BRIEFING.md) first (7 minutes), then follow the setup below **in order**.
+The data has **no fraud labels**, so everything the pipeline produces is a **risk signal** or an **anomaly**, never proof of fraud.
+
+> **New here?** Presenting or catching up: read [`docs/PRESENTER_GUIDE.md`](docs/PRESENTER_GUIDE.md) (15 minutes, plain language). Full detail: [`docs/PIPELINE.md`](docs/PIPELINE.md) (how every stage works and why). Phase 1 (the local EDA) is archived in [`phase1_eda/`](phase1_eda/README.md).
 
 ---
 
-## What's in the repo, and what isn't
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Volume["Volume bronze.landing (raw files)"]
+    F1["checks/<br/>1 gzipped JSON file per day"]
+    F2["dimensions/<br/>stores, channels, employees"]
+  end
+  subgraph Bronze["BRONZE: as received"]
+    B1["st_raw_checks<br/>(Auto Loader, streaming)"]
+    B2["mv_raw_locations<br/>mv_raw_revenue_centers<br/>mv_raw_employees (no personal data)"]
+  end
+  subgraph Silver["SILVER: clean and typed"]
+    S1["st_items · st_discounts<br/>st_payments · st_voids · st_taxes<br/>(streaming)"]
+    S2["mv_receipt_copies<br/>(exact copies, audit)"]
+    S3["mv_checks<br/>1 row per real receipt<br/>totals + 20 flags"]
+    S4["mv_stores · mv_channels<br/>mv_employees"]
+  end
+  subgraph Gold["GOLD: business-ready"]
+    G1["mv_employee_signals"]
+    G2["mv_employee_risk_score"]
+    G3["mv_store_risk_score"]
+    G4["mv_daily_store_kpis"]
+    G5["mv_data_quality_summary"]
+  end
+  F1 --> B1
+  F2 --> B2
+  B1 --> S1
+  B1 --> S2
+  B1 --> S3
+  S1 --> S3
+  S2 --> S3
+  B2 --> S4
+  S4 --> S3
+  S3 --> G1 --> G2
+  S1 --> G1
+  S3 --> G3
+  S3 --> G4
+  S3 --> G5
+  G2 --> Q["Job task 2:<br/>quality gate"]
+  G5 --> Q
+```
+
+`st_` = **streaming table** (processes only new data on each run) · `mv_` = **materialized view** (a stored query result Databricks keeps up to date).
+
+One **Databricks job** runs it all: `refresh_pipeline` (the whole flow above) → `quality_gate` (checks the result and fails the job if something is wrong).
+
+---
+
+## Repository layout
+
+Follows the organizers' template: orchestration in `resources/`, table logic in `src/transformations/`.
 
 ```
-databricks-challenge/                  <- the repo (git clone creates this folder)
-├── CLAUDE.md                          <- context for AI assistants (Claude)
-├── README.md                          <- this guide
-├── requirements.txt                   <- Python libraries to install
-├── .gitignore                         <- keeps data and your virtual environment out of git
+databricks-challenge/
+├── databricks.yml                      bundle config: project name, workspace, catalog variable
+├── resources/
+│   ├── jobs/
+│   │   └── daily_orchestration_job.yml     the job: 2 tasks, schedule, retries, failure e-mail
+│   └── pipelines/
+│       └── lakeflow_pipeline.yml           the pipeline + the bronze/silver/gold schemas and landing volume
+├── src/
+│   ├── transformations/                every file here is part of the pipeline
+│   │   ├── bronze/
+│   │   │   ├── st_raw_checks.py            raw receipts, incremental (Auto Loader), schema contract, 3 expectation levels
+│   │   │   └── mv_raw_dimensions.py        stores, channels, employees (personal data never parsed)
+│   │   ├── silver/
+│   │   │   ├── st_receipt_lines.py         items, discounts, payments, voids, taxes (flattened from the nested JSON)
+│   │   │   ├── mv_receipt_copies.sql       exact-copy receipts removed (audit list)
+│   │   │   ├── mv_dimensions.sql           clean stores, channels, employees
+│   │   │   └── mv_checks.sql               THE clean receipt table: totals, 8 quality + 8 risk + 4 context flags
+│   │   └── gold/
+│   │       ├── mv_employee_signals.py      6 risk signals per employee, as rates
+│   │       ├── mv_employee_risk_score.sql  0-100 explainable score + tier per employee
+│   │       ├── mv_store_risk_score.sql     same per restaurant, vs the chain median
+│   │       ├── mv_daily_store_kpis.sql     daily KPIs per restaurant (dashboard)
+│   │       └── mv_data_quality_summary.sql per day: raw vs clean, copies, balance rate, every flag
+│   └── validation/
+│       ├── quality_gate.py                 job task 2: table-level checks, fails the job on error
+│       └── local_dry_run.py                runs the same logic locally with PySpark (parity test vs Phase 1)
 ├── docs/
-│   ├── TEAM_BRIEFING.md               <- start here
-│   ├── EDA_PLAN.md                    <- tasks, 5-minute storyboard, decisions
-│   ├── EDA_LEARNINGS.md               <- every number and finding so far
-│   └── DECK_GUIDE.md                  <- Phase 1 deck plan (charts embedded)
-├── eda_work/
-│   ├── scripts/                       <- all the code (see "Scripts" below)
-│   ├── reports/                       <- small cleaning reports (these ARE in git)
-│   ├── charts/                        <- the presentation charts as PNGs (these ARE in git)
-│   ├── parquet/                       <- NOT in git · built by the scripts
-│   └── clean/                         <- NOT in git · the clean tables we analyze  <- you need this
-└── Applebees Challenge/               <- NOT in git · the raw dataset (11 GB), only needed to rebuild
+│   ├── PRESENTER_GUIDE.md              15-minute read: story, glossary, slide-by-slide script, Q&A
+│   ├── PIPELINE.md                     how and why: every stage, table, check and design choice
+│   ├── img/                            screenshots of the Databricks runs (used in the deck)
+│   ├── PHASE2_BRIEF.md                 the organizers' brief and rubric
+│   └── PHASE2_PLAN.md                  plan, status and presentation outline
+├── phase1_eda/                         Phase 1 (local EDA with DuckDB), archived: code, charts, docs
+├── CLAUDE.md                           context file for AI assistants
+└── upload/  (not in git)               gzipped copies of the raw files, ready to upload
 ```
-
-The data folders are excluded on purpose:
-
-- They are big: 11 GB raw plus about 650 MB built. GitHub refuses files over 100 MB.
-- The raw data belongs to the organizers, and the HR file contains employee names and birth dates.
 
 ---
 
-## Setup (about 15 minutes)
+## How to run it
 
-### Step 1: Clone the repo
+Everything is deployed from this repo with the Databricks CLI (Databricks Asset Bundles). We use **Databricks Free Edition**, catalog `workspace`.
 
-**Mac:**
+### 1. One-time setup (on your computer)
 
 ```bash
-cd ~/Desktop
-git clone https://github.com/santiagocachoo/databricks-challenge.git
+brew tap databricks/tap && brew install databricks        # Databricks CLI (macOS)
+databricks auth login --host https://<your-workspace>.cloud.databricks.com
+```
+
+Put the same workspace URL in `databricks.yml` (`targets.dev.workspace.host`).
+
+### 2. Deploy (creates schemas, landing volume, pipeline and job)
+
+```bash
 cd databricks-challenge
+databricks bundle validate
+databricks bundle deploy
 ```
 
-**Windows (PowerShell):**
+Do **not** create the `bronze` / `silver` / `gold` schemas or the volume by hand: the bundle owns them.
 
-```powershell
-cd $HOME\Desktop
-git clone https://github.com/santiagocachoo/databricks-challenge.git
-cd databricks-challenge
-```
+### 3. Prepare and upload the raw files
 
-**Every command from here on is run from inside the `databricks-challenge` folder.**
-
-### Step 2: Create your Python environment
-
-A virtual environment (`.venv`) keeps this project's libraries separate from the rest of your computer. Each person creates their own; it is never committed.
-
-**Mac:**
+The raw data (11 GB) is not in git. Compressed copies go in `upload/` (each day ≈ 4–10 MB gzipped vs 75–170 MB raw). From the repo root, with the raw data in `Applebees Challenge/`:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+# one week (May 4-10, includes Mother's Day) - change the days to load more
+mkdir -p upload/week1_may04_10 upload/dimensions
+for d in 04 05 06 07 08 09 10; do
+  gzip -c "Applebees Challenge/facts/checks/brand=rmh/dt=2026-05-$d/checks.json" > upload/week1_may04_10/checks_2026-05-$d.json.gz
+done
+gzip -c "Applebees Challenge/dimensions/locations/locations.json"            > upload/dimensions/locations.json.gz
+gzip -c "Applebees Challenge/dimensions/revenue_centers/revenueCenters.json" > upload/dimensions/revenue_centers.json.gz
+gzip -c "Applebees Challenge/dimensions/employees/employees.json"            > upload/dimensions/employees.json.gz
 ```
 
-**Windows (PowerShell):**
-
-```powershell
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-- When the environment is active, your prompt starts with `(.venv)`.
-- **Activate it again every time you open a new terminal:**
-  - Mac: `source .venv/bin/activate`
-  - Windows: `.venv\Scripts\Activate.ps1`
-- **Windows:** if PowerShell says running scripts is disabled, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, answer `Y`, then activate again.
-- **VS Code:** press `Cmd/Ctrl+Shift+P` → "Python: Select Interpreter" → choose the one inside `.venv`.
-- **Jupyter notebooks in VS Code** also need this: `pip install ipykernel`.
-
-### Step 3: Get the data (choose ONE path)
-
-#### Path A: prebuilt clean tables (fastest, recommended)
-
-1. Download **`clean.zip`**
-2. Unzip it **inside the `eda_work` folder**, so you end up with exactly these files:
-   ```
-   eda_work/clean/checks.parquet
-   eda_work/clean/items.parquet
-   eda_work/clean/discounts.parquet
-   eda_work/clean/voids.parquet
-   eda_work/clean/payments.parquet
-   eda_work/clean/taxes.parquet
-   eda_work/clean/stores.parquet
-   eda_work/clean/channels.parquet
-   eda_work/clean/employees.parquet
-   eda_work/clean/removed_duplicates.parquet
-   ```
-   **Common mistake:** a double folder like `eda_work/clean/clean/checks.parquet`. If that happens, move the files up one level.
-
-You can analyze everything with this. You won't be able to rebuild from raw, which is fine.
-
-#### Path B: rebuild from the raw data (if you want to run the whole pipeline)
-
-1. Get the raw dataset from the organizers' dataset link.
-2. Put it at the root of the repo, named **exactly** `Applebees Challenge`: a space between the words, capital A and capital C. If your download is named something else (e.g. `Applebees_Clean_Dataset`), rename it. It must look like this:
-   ```
-   databricks-challenge/Applebees Challenge/dimensions/locations/locations.json
-   databricks-challenge/Applebees Challenge/dimensions/revenue_centers/revenueCenters.json
-   databricks-challenge/Applebees Challenge/dimensions/items/items.json
-   databricks-challenge/Applebees Challenge/dimensions/employees/employees.json
-   databricks-challenge/Applebees Challenge/facts/checks/brand=rmh/dt=2026-04-28/checks.json
-   ... (115 dt= folders, from 2026-04-28 to 2026-08-20)
-   ```
-   **Common mistake:** a double folder after unzipping, like `Applebees Challenge/Applebees Challenge/dimensions`. Move the contents up one level.
-3. Run the whole pipeline with one command:
-
-   ```bash
-   python eda_work/scripts/build_all.py
-   ```
-
-   - It takes about 4–6 minutes the first time and prints one line per day converted.
-   - If it gets interrupted, just run it again: finished days are skipped, and a half-written day is never kept.
-   - The result is identical to everyone else's: we tested that a rebuild reproduces the same rows.
-
-### Step 4: Verify your setup
+Upload to the landing volume (file names must stay `checks_YYYY-MM-DD.json.gz`: the pipeline reads the business day from the name):
 
 ```bash
-python eda_work/scripts/check_setup.py
+V=dbfs:/Volumes/workspace/bronze/landing
+databricks fs mkdir $V/checks          # create the two folders once
+databricks fs mkdir $V/dimensions
+for f in upload/dimensions/*.json.gz; do databricks fs cp "$f" "$V/dimensions/$(basename $f)"; done
+for f in upload/week1_may04_10/*.json.gz; do databricks fs cp "$f" "$V/checks/$(basename $f)"; done
 ```
 
-It checks Python, the libraries, the raw data and the built tables, and tells you what to fix. It never changes anything.
+(You can also drag the files into the volume in Catalog Explorer → `workspace` → `bronze` → `landing`.)
 
-- **Ready:** the last line says **`ALL GOOD - you can analyze eda_work/clean/.`**
-- **Path A users:** section 2 (raw data) will say MISSING. That's expected and still ends in ALL GOOD.
+### 4. Run
 
-### Step 5: First look (proves it works)
-
-Run this from the repo folder with the environment active (`python`, then paste it):
-
-```python
-import pandas as pd
-checks = pd.read_parquet("eda_work/clean/checks.parquet")
-print(len(checks))   # must print 2142617
-print(checks[["dt", "store_name", "channel_group", "net_sales", "tips", "has_void", "flag_unbalanced"]].head())
+```bash
+databricks bundle run daily_orchestration_job
 ```
 
-The same data in SQL, with DuckDB:
+The CLI prints a link to the run. In the workspace: **Jobs & Pipelines** → `applebees_daily_orchestration` (task graph) and `applebees_risk_pipeline` (table graph with row counts and expectation results).
 
-```python
-import duckdb
-duckdb.sql("""
-    SELECT store_name, round(sum(void_amount) / sum(gross_sales) * 100, 2) AS void_pct
-    FROM 'eda_work/clean/checks.parquet'
-    GROUP BY store_name ORDER BY void_pct DESC LIMIT 3
-""").df()
-# Munster 2.29 · Grand Island 1.73 · Clinton 1.69
+### 5. Add new days (incremental load)
+
+Upload more `checks_YYYY-MM-DD.json.gz` files to `checks/` and run the job again. Only the new files are read; nothing already loaded is reprocessed.
+
+### 6. Local dry run (optional, no Databricks)
+
+```bash
+pip install pyspark==4.0.1            # needs Java 17+
+python src/validation/local_dry_run.py . <folder with checks/ and dimensions/>
 ```
 
-**Paths are relative to the repo folder.** A notebook in a subfolder such as `notebooks/` must use `../eda_work/clean/checks.parquet`.
+---
+
+## The tables and what they are for
+
+| Layer | Table | Grain | Used for |
+|---|---|---|---|
+| bronze | `st_raw_checks` | 1 receipt, nested, as received | Single source of truth; replay; content fingerprint for copies |
+| bronze | `mv_raw_locations`, `mv_raw_revenue_centers`, `mv_raw_employees` | lookup rows | Store names, channels, anonymous HR attributes |
+| silver | `st_items`, `st_discounts`, `st_payments`, `st_voids`, `st_taxes` | 1 line | Every analysis at line level (who voided what, which discount, which tip) |
+| silver | `mv_receipt_copies` | 1 removed copy | Audit: what was removed and which receipt was kept |
+| silver | `mv_checks` | 1 real receipt | The clean fact table: money totals and 20 yes/no flags |
+| silver | `mv_stores`, `mv_channels`, `mv_employees` | lookup | Joins and filters |
+| gold | `mv_employee_signals` | 1 employee | 6 risk signals as rates + eligibility |
+| gold | `mv_employee_risk_score` | 1 eligible employee | 0–100 score, top-10% count, tier: who to review first |
+| gold | `mv_store_risk_score` | 1 restaurant | Same signals vs the chain median: where to look first |
+| gold | `mv_daily_store_kpis` | 1 restaurant × day | Dashboard trends |
+| gold | `mv_data_quality_summary` | 1 day | Data-quality evidence: raw vs clean, copies, balance, flags |
+| gold | `quality_gate_results` | 1 check × run | History of every quality-gate run (written by the job) |
+
+Details on every column rule, check and design choice: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 ---
 
-## The clean tables (`eda_work/clean/`)
+## Rules we follow
 
-A receipt is identified by **`dt` + `location_id` + `check_id`**. Use all three to join tables: `check_id` alone repeats across stores.
-
-| File                         | One row is             | Rows       | Notes                                                                                                       |
-| ---------------------------- | ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| `checks.parquet`             | one receipt            | 2,142,617  | 53 columns: times, store, channel, money totals, and three kinds of flags (below)                           |
-| `items.parquet`              | one line on a receipt  | 28,558,894 | `line_type` = menu item / combo part / add-on / modifier / free line. Large: load only the columns you need |
-| `discounts.parquet`          | one discount line      | 516,689    | Item- and check-level together (`level`). `discount_name` is cleaned; `discount_name_raw` is the original   |
-| `voids.parquet`              | one voided item        | 178,293    | `void_reason` is cleaned, plus `void_reason_desc` in plain English                                          |
-| `payments.parquet`           | one payment            | 2,232,076  | `tip` is positive, `tip_pct`, `method_group` (Card, Cash, Delivery app…)                                    |
-| `taxes.parquet`              | one tax line           | 2,569,632  |                                                                                                             |
-| `stores.parquet`             | one store              | 185        | `active_in_data` is true for the 127 stores with sales                                                      |
-| `channels.parquet`           | one sales channel      | 23         | `channel_group`: Dine-in, To go, Online order, Delivery app, Catering, Other                                |
-| `employees.parquet`          | one employee record    | 156,975    | **No names or birth dates.** `rings_sales` marks the 3,183 who appear in sales                              |
-| `removed_duplicates.parquet` | one removed exact copy | 229        | Which receipt each copy duplicated (`kept_check_id`)                                                        |
-
-Flag columns on `checks.parquet`. **Nothing flagged was deleted**; filter with them as needed:
-
-- **`flag_*`: data-quality problems.** Examples: `flag_unbalanced`, `flag_no_items`, `flag_no_payment`, `flag_giant`, `flag_long_open`.
-- **`has_*` / `is_fully_comped`: risk behaviors.** Examples: `has_void`, `has_walkout`, `has_tip_over_bill`, `has_refund`.
-- **`is_*`: normal context.** Examples: `is_instant` (to-go and delivery), `is_after_midnight`, `is_split_guests`, `is_lookalike_split`.
-
-The full cleaning results are in `eda_work/reports/`:
-
-- `cleaning_summary.json`: the funnel and flag counts
-- `missing_values.csv`: null % and zero % for every column
-- `label_merges.csv`: every label we merged
-- `removed_duplicates.csv`: the receipts we removed
-
----
-
-## Scripts (`eda_work/scripts/`)
-
-Run every script from the repo folder, e.g. `python eda_work/scripts/check_setup.py`.
-
-| Script                                     | What it does                                                                               | When to run it                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `check_setup.py`                           | Checks your setup; changes nothing                                                         | After setup, or whenever something looks wrong                           |
-| `build_all.py`                             | Runs the 3 build steps below, in order                                                     | Path B, or after changing a cleaning rule                                |
-| `convert.py`                               | Raw JSON → `eda_work/parquet/<table>/<date>.parquet` (7 flat tables)                       | Through `build_all.py`                                                   |
-| `build_check_summary.py`                   | One row per receipt with its totals → `eda_work/parquet/check_summary/`                    | Through `build_all.py`                                                   |
-| `clean.py`                                 | Builds `eda_work/clean/` and `eda_work/reports/` (flags, merged labels, duplicate removal) | Through `build_all.py`                                                   |
-| `charts.py`                                | Builds every presentation chart into `eda_work/charts/` (~5 s)                             | After `clean/` exists, or after editing a chart                          |
-| `dup_check.py`                             | The duplicate analysis, step by step                                                       | To understand or re-check the duplicate decision                         |
-| `q.py` + `p1.py`…`p12.py`, `e1.py`…`e3.py` | The original profiling queries behind every number in `docs/`                              | Optional. Example: `python eda_work/scripts/q.py eda_work/scripts/p6.py` |
-| `peek.py`                                  | Shows the structure of one raw day file                                                    | Optional                                                                 |
-
----
-
-## Working together with git
-
-1. **Before you start working:** `git pull`
-2. **Work in your own files.** Name notebooks with your initials (e.g. `notebooks/sc_trends.ipynb`). Two people editing the same notebook almost always causes a conflict.
-3. **Commit small and often, saying what and why:**
-   ```bash
-   git status                      # check what changed: no .parquet, .json data or .zip files should appear
-   git add <the files you changed>
-   git commit -m "add weekday x hour heatmap for voids"
-   git pull --rebase               # get teammates' work first
-   git push
-   ```
-4. **Never commit data.** `.gitignore` blocks the data folders. If `git status` ever lists a `.parquet`, a `.zip` or anything under `Applebees Challenge/`, stop and ask.
-5. **Changing a cleaning rule:**
-   - Edit `clean.py`.
-   - Run `python eda_work/scripts/build_all.py`.
-   - Commit the script **and** the updated `eda_work/reports/` together, with the reason in the message. That way git keeps the history of every cleanup decision and its effect on the numbers.
-   - Then tell the team to rebuild, or share a new `clean.zip`.
-6. **Never show employee names.** Use IDs only. The data has no fraud labels, so say "risk signal" or "anomaly", never "fraud".
-
----
-
-## Troubleshooting
-
-| Problem                                                     | Fix                                                                                                                           |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ModuleNotFoundError: No module named 'duckdb'` (or pandas) | The environment isn't active. Run `source .venv/bin/activate` (Mac) or `.venv\Scripts\Activate.ps1` (Windows), then try again |
-| `command not found: python` (Mac, outside the environment)  | Use `python3`. Inside `.venv`, `python` works                                                                                 |
-| `'python3' is not recognized` (Windows)                     | Use `py`, or reinstall Python with "Add python.exe to PATH" ticked                                                            |
-| `check_setup.py` shows `0 of 115 daily files`               | The raw folder is misnamed or nested. It must be exactly `Applebees Challenge/facts/checks/brand=rmh/...` at the repo root    |
-| `FileNotFoundError: ... eda_work/clean/checks.parquet`      | You're not in the repo folder (`cd` into it), or path A unzipped to the wrong place                                           |
-| Rebuild is very slow or the computer freezes                | Close other heavy apps and run `build_all.py` again. It resumes where it stopped                                              |
-| `git push` is rejected                                      | Someone pushed first. Run `git pull --rebase`, then `git push`                                                                |
-| Merge conflict in a notebook                                | Keep your version under a new name, take theirs, and tell the team. Next time, use separate notebooks                         |
-
----
+1. **Flag, don't delete.** Outliers are the signal in fraud work. Problems become flags and WARN expectations; only exact copies are removed, and they are listed in `mv_receipt_copies`.
+2. **Rates, not totals** when comparing employees or stores.
+3. **Risk signal, not fraud.** No labels exist; a high score means "look here first".
+4. **Privacy.** Names, birth dates and payroll IDs from the HR file are never parsed, so they are in no table. Employee IDs stay off slides.
+5. **Everything as code.** Pipeline, job, schemas and volume are defined in this repo and deployed with one command.

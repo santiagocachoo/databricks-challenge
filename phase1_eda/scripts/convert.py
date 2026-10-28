@@ -4,7 +4,7 @@ import duckdb, time, sys, os, glob, json, traceback
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]  # repo root (Databricks_challenge/)
 ROOT = str(REPO / "Applebees Challenge" / "facts" / "checks" / "brand=rmh")
-OUT = str(REPO / "eda_work" / "parquet")
+OUT = str(REPO / "phase1_eda" / "parquet")
 tables = ["checks","items","item_discounts","check_discounts","payments","taxes","voids"]
 for t in tables: os.makedirs(f"{OUT}/{t}", exist_ok=True)
 files = sorted(glob.glob(f"{ROOT}/dt=*/checks.json"))

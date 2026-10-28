@@ -1,0 +1,30 @@
+# Databricks Asset Bundle: the whole Phase 2 project as code.
+# One command creates everything in the workspace:
+#   databricks bundle deploy      -> schemas, landing volume, pipeline and job
+#   databricks bundle run daily_orchestration_job   -> runs pipeline + quality gate
+# See README.md for the step-by-step run instructions.
+
+bundle:
+  name: applebees_risk_signals
+
+include:
+  - resources/jobs/*.yml
+  - resources/pipelines/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds the bronze, silver and gold schemas (Free Edition default is "workspace")
+    default: workspace
+
+targets:
+  dev:
+    default: true
+    workspace:
+      # Workspace URL (what the browser shows when you are logged in to Databricks)
+      host: https://dbc-992f5532-5ec3.cloud.databricks.com
+
+  # Second workspace (a teammate's Free Edition account) for the full 115-day run, so the
+  # demo workspace above keeps its compute quota. Deploy with: databricks bundle deploy -t full
+  full:
+    workspace:
+      host: https://REPLACE_WITH_TEAMMATE_WORKSPACE.cloud.databricks.com

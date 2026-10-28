@@ -1,0 +1,52 @@
+# Lakeflow Spark Declarative Pipeline (formerly Delta Live Tables).
+# This file also creates the Unity Catalog objects the pipeline writes to:
+#   <catalog>.bronze  raw data as it arrived (+ the landing volume for the raw files)
+#   <catalog>.silver  clean, typed, de-duplicated tables with data-quality flags
+#   <catalog>.gold    business-ready risk signals, risk scores, KPIs and the data-quality summary
+# Table logic lives in src/transformations/{bronze,silver,gold}. Every .py and .sql file there is part of this pipeline.
+
+resources:
+  schemas:
+    bronze_schema:
+      catalog_name: ${var.catalog}
+      name: bronze
+      comment: Raw point-of-sale receipts and lookup files exactly as received (plus ingestion metadata).
+
+    silver_schema:
+      catalog_name: ${var.catalog}
+      name: silver
+      comment: Clean, typed, de-duplicated receipts and receipt lines, with data-quality and risk flags.
+
+    gold_schema:
+      catalog_name: ${var.catalog}
+      name: gold
+      comment: Business-ready tables - employee and store risk signals, risk scores, daily KPIs, data-quality summary.
+
+  volumes:
+    landing_volume:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.bronze_schema.name}
+      name: landing
+      volume_type: MANAGED
+      comment: "Landing zone for raw files. checks/ = one gzipped JSON file per business day (checks_YYYY-MM-DD.json.gz); dimensions/ = lookup files."
+
+  pipelines:
+    applebees_pipeline:
+      name: applebees_risk_pipeline
+      catalog: ${var.catalog}
+      # default schema for unqualified names; every table in src/ is written with its layer schema (bronze./silver./gold.)
+      schema: ${resources.schemas.silver_schema.name}
+      serverless: true
+      channel: CURRENT
+      # triggered (not continuous): each run processes only the files that arrived since the last run, then stops
+      continuous: false
+      libraries:
+        - glob:
+            include: ../../src/transformations/**
+      configuration:
+        landing_path: /Volumes/${var.catalog}/${resources.schemas.bronze_schema.name}/${resources.volumes.landing_volume.name}
+        # Phase 1 compared employees with $5,000+ in sales and 50+ card payments over 115 days.
+        # Gold scales both bars to the number of days actually loaded (same bar per day).
+        phase1_days: "115"
+        min_sales_phase1: "5000"
+        min_card_payments_phase1: "50"

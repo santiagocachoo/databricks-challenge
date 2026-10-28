@@ -6,9 +6,9 @@ Rules:
   - The only rows removed are exact copies of another receipt (dup_check.py logic).
   - Original columns are kept next to cleaned ones (e.g. gratuity next to tip).
 
-Run:  python3 eda_work/scripts/clean.py [stage ...]
+Run:  python3 phase1_eda/scripts/clean.py [stage ...]
 Stages: labels dups checks lines tables report   (default: all, in order)
-Output: eda_work/clean/*.parquet  and  eda_work/reports/*
+Output: phase1_eda/clean/*.parquet  and  phase1_eda/reports/*
 """
 import tempfile
 DUCK_TMP = (__import__("pathlib").Path(tempfile.gettempdir()) / "duckdb_spill").as_posix()  # works on macOS, Linux and Windows
@@ -16,12 +16,12 @@ import duckdb, sys, os, json, time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-P = REPO / "eda_work" / "parquet"          # flattened raw tables (from convert.py)
+P = REPO / "phase1_eda" / "parquet"          # flattened raw tables (from convert.py)
 CK = P / "check_summary" / "check_summary.parquet"
 DIM = REPO / "Applebees Challenge" / "dimensions"
-OUT = REPO / "eda_work" / "clean"
-REP = REPO / "eda_work" / "reports"
-TMP = REPO / "eda_work" / "clean" / "_tmp"
+OUT = REPO / "phase1_eda" / "clean"
+REP = REPO / "phase1_eda" / "reports"
+TMP = REPO / "phase1_eda" / "clean" / "_tmp"
 for d in (OUT, REP, TMP): d.mkdir(parents=True, exist_ok=True)
 
 GIANT_LINES = 200          # a receipt with more than 200 lines is not a real meal (p99 = 43 lines)

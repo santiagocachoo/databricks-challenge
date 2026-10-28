@@ -1,0 +1,53 @@
+# Databricks job (Lakeflow Jobs): runs the pipeline, then checks the result.
+#
+#   refresh_pipeline  ──►  quality_gate
+#
+# - refresh_pipeline: triggered update of the pipeline. Auto Loader only reads the day files
+#   that landed since the last run (checkpoints), so a normal run is incremental and cheap.
+# - quality_gate: runs only if the pipeline succeeded. Checks uniqueness, reconciliation,
+#   completeness, accuracy and privacy on the new tables, and FAILS the job if any check fails,
+#   so bad data never reaches the dashboard silently. Results are kept in gold.quality_gate_results.
+#
+# Schedule: every day at 06:00 Monterrey time, after the previous business day's file lands.
+# It is deployed PAUSED so it does not use Free Edition compute while we develop; un-pause it in
+# the Jobs UI (or set pause_status: UNPAUSED) to turn it on.
+# Alternative trigger we considered: "file arrival" on the landing volume (runs as soon as a file lands).
+
+resources:
+  jobs:
+    daily_orchestration_job:
+      name: applebees_daily_orchestration
+      description: Ingest new POS day files, rebuild bronze -> silver -> gold, then run the data-quality gate.
+      max_concurrent_runs: 1        # never two runs writing the same tables at once
+      timeout_seconds: 7200         # whole job gives up after 2 hours
+
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: America/Monterrey
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+
+      tasks:
+        - task_key: refresh_pipeline
+          description: Triggered pipeline update (incremental). Retries once for transient errors.
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.applebees_pipeline.id}
+            full_refresh: false
+          max_retries: 1
+          min_retry_interval_millis: 300000   # wait 5 minutes before retrying
+          retry_on_timeout: false
+          timeout_seconds: 3600
+
+        - task_key: quality_gate
+          description: Data-quality gate on the refreshed tables. No retry - a failed check needs a person.
+          depends_on:
+            - task_key: refresh_pipeline
+          notebook_task:
+            notebook_path: ../../src/validation/quality_gate.py
+            base_parameters:
+              catalog: ${var.catalog}
+          max_retries: 0
+          timeout_seconds: 1200

@@ -22,7 +22,7 @@ Phase 1 is done: the team presented the EDA on Oct 8. Everything Phase 1 produce
 
 | What | Where |
 |---|---|
-| 12 finished charts, full size (2400 × 1350 px, 16:9) | `eda_work/charts/` in this repo |
+| 12 finished charts, full size (2400 × 1350 px, 16:9) | `phase1_eda/charts/` in this repo |
 | Deck guide: the 11-slide plan, which chart goes where, design rules, appendix, cut order | `docs/DECK_GUIDE.md` (charts embedded; 1.3 MB) |
 | Every number and finding | `docs/EDA_LEARNINGS.md` |
 | Quick catch-up | `docs/TEAM_BRIEFING.md` |
@@ -31,8 +31,8 @@ Phase 1 is done: the team presented the EDA on Oct 8. Everything Phase 1 produce
 ## Decisions
 
 - **Presentation was Thu Oct 8.** We ran P0 tasks only. The P1 tasks are now a backlog for Phase 2.
-- **Tooling:** Python, with DuckDB and pandas. Everyone analyzes the clean tables in `eda_work/clean/`. No Databricks notebook for Phase 1.
-- **Repo:** code and docs live in git; data never does. Teammates set up with `README.md`, and either get `clean.zip` (shared by the team) or rebuild with `python eda_work/scripts/build_all.py`.
+- **Tooling:** Python, with DuckDB and pandas. Everyone analyzes the clean tables in `phase1_eda/clean/`. No Databricks notebook for Phase 1.
+- **Repo:** code and docs live in git; data never does. Teammates set up with `README.md`, and either get `clean.zip` (shared by the team) or rebuild with `python phase1_eda/scripts/build_all.py`.
 - **Deck and presentation:** built from the deck guide. The storyboard below is the 11-slide plan we presented.
 - **Form and proof:** already submitted.
 - **Framing rule:** the data has no fraud labels. We say "risk signals" and "anomalies", never "fraud" as a finding. No employee names or IDs on slides.
@@ -42,7 +42,7 @@ Phase 1 is done: the team presented the EDA on Oct 8. Everything Phase 1 produce
 | Step | What | Tasks | State |
 |---|---|---|---|
 | 0 | Ingest: 115 daily JSON files (11 GB) → 7 flat Parquet tables, profile every table | T0 | Done |
-| 1 | Clean tables: positive tip, merged labels, line types, flags, anonymized employees → `eda_work/clean/` | T5 | Done |
+| 1 | Clean tables: positive tip, merged labels, line types, flags, anonymized employees → `phase1_eda/clean/` | T5 | Done |
 | 2 | Duplicates: 1,800 look-alike **groups** holding 3,774 receipts → 3,545 split bills kept, 229 exact copies ($73) removed | T6 | Done |
 | — | Repo: one-command rebuild (`build_all.py`), setup checker (`check_setup.py`), `README.md` for teammates | — | Done |
 | 3 | Cleaning visuals: missing-values chart and cleaning funnel (`01`, `02`) | T7, T8 | Done |
@@ -66,11 +66,11 @@ P0 means needed for a 4/4 score. P1 means polish; the open P1 tasks are the Phas
 
 ### 2. Data cleaning and preparation
 
-- [x] T5 (P0) Build the clean layer. Apply every cleaning decision in the table below and write `eda_work/clean/`, with 21 yes/no flag columns (`flag_*`, `has_*`, `is_*`).
+- [x] T5 (P0) Build the clean layer. Apply every cleaning decision in the table below and write `phase1_eda/clean/`, with 21 yes/no flag columns (`flag_*`, `has_*`, `is_*`).
 - [x] T6 (P0) Resolve the 1,800 possible duplicate groups by comparing their full contents. Result: 3,545 split bills kept, and 229 exact copies ($73) removed.
 - [x] T7 (P0) Missing-values chart: the 3 always-empty fields that were dropped, and the one partly empty field kept (`charts/01_missing_values.png`).
 - [x] T8 (P0) Cleaning funnel: raw → removed → clean → flagged → unflagged, plus the reasons for each flag (`charts/02_cleaning_funnel.png`).
-- [ ] T9 (P1) Cleaning log for the appendix. Covered for now by the cleaning table in the deck guide (appendix A5) and `eda_work/reports/`.
+- [ ] T9 (P1) Cleaning log for the appendix. Covered for now by the cleaning table in the deck guide (appendix A5) and `phase1_eda/reports/`.
 
 ### 3. Exploratory analysis and insights
 
@@ -128,7 +128,7 @@ Core rule: in fraud work, outliers are signal, so we flag them instead of deleti
 
 ## Charts
 
-All in `eda_work/charts/`, 2400 × 1350 px. Rebuild all with `python eda_work/scripts/charts.py` (about 5 seconds), or one with e.g. `python eda_work/scripts/charts.py 06`.
+All in `phase1_eda/charts/`, 2400 × 1350 px. Rebuild all with `python phase1_eda/scripts/charts.py` (about 5 seconds), or one with e.g. `python phase1_eda/scripts/charts.py 06`.
 
 | Chart | What it shows | Slide |
 |---|---|---|
