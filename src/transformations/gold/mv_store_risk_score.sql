@@ -4,7 +4,7 @@
 -- Munster (store 80) voided 2.29%, 2.9x the chain median, every month.
 --   *_vs_chain   the store's rate divided by the chain median (2.0 = twice the typical store)
 --   risk_score   average percentile on the 5 signals x 100, among stores with 200+ receipts
--- Store names are fine on slides (they are places, not people).
+-- Store names can be shown in reports (they are places, not people).
 CREATE OR REFRESH MATERIALIZED VIEW gold.mv_store_risk_score
 COMMENT 'Risk signals per restaurant as rates, ratio to the chain median and a 0-100 score (stores with 200+ receipts).'
 TBLPROPERTIES ('quality' = 'gold')

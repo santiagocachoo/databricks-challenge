@@ -15,7 +15,7 @@ over 115 days; below that a single $30 void can make a 10% void rate. Here the s
 to the number of days loaded (same bar per day), so the table works for 7 days or for all 115.
 
 Only clean receipts count: every line table is joined to silver.mv_checks, which drops exact copies.
-Employee IDs are anonymous POS ids; no names exist anywhere in the pipeline. Keep IDs off slides.
+Employee IDs are anonymous POS ids; no names exist anywhere in the pipeline. Individual employees are not shown in reports.
 """
 try:
     from pyspark import pipelines as dp

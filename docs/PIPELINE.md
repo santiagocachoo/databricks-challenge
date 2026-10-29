@@ -1,6 +1,6 @@
 # How the pipeline works, and why
 
-This is the explainer for Phase 2: what each stage does, why we built it that way, and what each table is worth. If you only have 10 minutes, read sections 1, 2 and 6.
+Design notes for the Phase 2 pipeline: what each stage does, why it was built that way, and what each table is worth. For a quick read: sections 1, 2, 6 and 10.
 
 Contents:
 1. The problem and the data
@@ -14,7 +14,7 @@ Contents:
 9. Proof that the port is correct (parity with Phase 1)
 10. Results of the Databricks runs (Oct 28, 2026): 14-day demo and full 115-day run
 11. Limits and what we would do next
-12. Questions we expect, with answers
+12. Design FAQ
 
 ---
 
@@ -269,7 +269,7 @@ Read it as: the top stores are high on **several** signals at once (Hilliard Rom
 
 - The 62 *review first* employees void **3× as much** of their sales as the rest (2.44% vs 0.81%) and have **13× the walkout rate** (0.96% vs 0.07% of receipts), while ringing only 2.7% of sales. A manager can review 62 people instead of 2,114.
 - If the 5 signals were unrelated, about **18** employees would be top 10% on 3+ of them by chance (0.86% × 2,114). We see **62, 3.4× chance**, the same stacking Phase 1 found over 115 days (106 vs ~22). The pattern holds in two weeks of data, computed automatically by the pipeline.
-- Employee IDs exist in the table for managers, but stay off slides.
+- Employee IDs exist in the table for managers; individual employees are not shown in any report.
 
 
 ### Full run: all 115 days (teammate's workspace, `dbc-23a888d3-fb75`)
@@ -313,7 +313,7 @@ Read it as: the top stores are high on **several** signals at once (Hilliard Rom
 
 - The 106 *review first* employees void **2.6× as much** of their sales as everyone else (2.26% vs 0.86%), give **2.5× the discounts** (7.56% vs 3.02%) and have **7.6× the walkout rate** (0.66% vs 0.09% of receipts), while ringing **2.9% of sales**. A manager can start with 106 people instead of 2,516.
 - If the 5 signals were unrelated, about **22** employees would be top 10% on 3 or more by chance (0.86% × 2,516). The pipeline finds **106, 4.9× chance**: exactly the Phase 1 number, now produced automatically.
-- Employee IDs exist in the table for managers, but stay off slides.
+- Employee IDs exist in the table for managers; individual employees are not shown in any report.
 
 ### Dashboard on the gold tables (full workspace, `22_dashboard_overview.png`)
 
@@ -336,7 +336,7 @@ Reading the line chart honestly: the **void rate is flat** all period (about 0.7
 - **Job roles are unknown** (no lookup for job IDs), so part of a signal may come from the role (e.g. bartenders handle cash and voids).
 - **Not built yet:** manager–employee approval pairs, the Munster (store 80) deep dive, repeated tip padding, the dashboard as code in the bundle, alerts on score changes.
 
-## 12. Questions we expect, with answers
+## 12. Design FAQ
 
 - **"Is this fraud?"** No labels exist, so we can't say. The score ranks where to look first; a manager confirms.
 - **"Why not delete the bad rows?"** In fraud work the odd rows are the evidence. We flag and count them (WARN expectations); only exact copies are removed, and they're listed.
