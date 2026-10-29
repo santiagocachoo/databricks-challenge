@@ -110,7 +110,6 @@ databricks-challenge/
 │   ├── PHASE2_BRIEF.md                 the organizers' brief and rubric
 │   └── PHASE2_PLAN.md                  plan, status and presentation outline
 ├── phase1_eda/                         Phase 1 (local EDA with DuckDB), archived: code, charts, docs
-├── CLAUDE.md                           context file for AI assistants
 └── upload/  (not in git)               gzipped copies of the raw files, ready to upload
 ```
 

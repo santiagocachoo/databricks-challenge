@@ -2,7 +2,7 @@
 
 Tec de Monterrey x Sun Holdings x Databricks Data Challenge · Applebee's AI-Powered Fraud Detection track
 **Status: Phase 1 complete. The EDA was presented on Thu Oct 8, 2026.** Next: Phase 2 (brief pending).
-Last updated: Oct 8, 2026, after the presentation · Live team version: https://claude.ai/code/artifact/3d05aa74-0b24-476f-b645-4fb429df27ca
+Last updated: Oct 8, 2026, after the presentation
 
 ## Goal
 
@@ -26,7 +26,6 @@ Phase 1 is done: the team presented the EDA on Oct 8. Everything Phase 1 produce
 | Deck guide: the 11-slide plan, which chart goes where, design rules, appendix, cut order | `docs/DECK_GUIDE.md` (charts embedded; 1.3 MB) |
 | Every number and finding | `docs/EDA_LEARNINGS.md` |
 | Quick catch-up | `docs/TEAM_BRIEFING.md` |
-| Context for AI assistants (start here in a new Claude session) | `CLAUDE.md` |
 
 ## Decisions
 
