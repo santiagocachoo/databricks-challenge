@@ -9,6 +9,7 @@ The data has **no fraud labels**, so everything the pipeline produces is a **ris
 > **New here?**
 > - **Presenting:** read [`docs/PRESENTER_GUIDE.md`](docs/PRESENTER_GUIDE.md) (15 min: story, glossary, slide-by-slide script, Q&A).
 > - **Building the deck:** [`docs/PHASE2_PLAN.md`](docs/PHASE2_PLAN.md) → "Presentation outline" and "Numbers for the slides" (which number and which screenshot from [`docs/img/`](docs/img/) goes on each slide).
+> - **Data-quality checks:** see [Data-quality checks](#data-quality-checks) below (code links + screenshots).
 > - **Full detail / hard questions:** [`docs/PIPELINE.md`](docs/PIPELINE.md). Phase 1 is archived in [`phase1_eda/`](phase1_eda/README.md).
 
 ---
@@ -22,6 +23,47 @@ The data has **no fraud labels**, so everything the pipeline produces is a **ris
 - **Dashboard:** an AI/BI dashboard on the gold tables ([screenshot](docs/img/22_dashboard_overview.png)).
 
 Evidence: [`docs/img/`](docs/img/) (22 screenshots) and [`docs/PIPELINE.md` §9–10](docs/PIPELINE.md).
+
+## Data-quality checks
+
+Every run is checked twice: **expectations** test each row while the tables are built, and a **quality gate** tests whole tables after the pipeline finishes. Screenshots below are from the full 115-day run (2,142,846 receipts).
+
+### 1. While building: expectations on every row
+
+Each rule has an action. **FAIL** stops the pipeline, **DROP** removes the row and counts it, **ALLOW** (warn) keeps the row and counts it. Most rules only warn on purpose: in fraud work the odd receipts are the evidence, so they are flagged, not deleted.
+
+| Table | Rules | Code | Result (115 days) |
+|---|---|---|---|
+| `bronze.st_raw_checks` (raw receipts) | FAIL: file can't be dated · DROP: receipt has no ID or store · ALLOW: business date ≠ file date, data outside the schema | [`st_raw_checks.py`](src/transformations/bronze/st_raw_checks.py) | 0 failures, 0 dropped ([screenshot](docs/img/24_expectations_bronze_full_run.png)) |
+| `silver.mv_checks` (clean receipts) | 12 ALLOW rules: money identity balances, has items, has payment, no negative prices, closed within 6 h, normal size, plausible check ID, priced lines have quantity, times parsed, closes after it opens, known store, known channel | [`mv_checks.sql`](src/transformations/silver/mv_checks.sql) | 2,142,617 written, **0 dropped**; e.g. 17,981 priced lines with qty 0, 11,301 no items, 78 unbalanced, all flagged and kept ([screenshot](docs/img/25_expectations_mv_checks_full_run.png)) |
+| Silver line tables, gold | non-negative prices, parsed times, rates between 0 and 1 | [`st_receipt_lines.py`](src/transformations/silver/st_receipt_lines.py), [`mv_employee_signals.py`](src/transformations/gold/mv_employee_signals.py) | warn only |
+
+### 2. After building: the quality gate (job task 2)
+
+[`src/validation/quality_gate.py`](src/validation/quality_gate.py) runs 12 checks on the finished tables. If any fails, the notebook raises an error, **the job fails and e-mails the owner**. Every result is stored in `gold.quality_gate_results`.
+
+| # | Dimension | Check | Rule |
+|---|---|---|---|
+| 1 | Uniqueness | No duplicate receipt key (dt + store + check) in `silver.mv_checks` | = 0 |
+| 2 | Uniqueness | No exact-copy receipt left in `silver.mv_checks` | = 0 |
+| 3 | Consistency | Bronze receipts = silver receipts + copies removed, every day | = 0 differences |
+| 4 | Completeness | Every day in bronze reached silver | = 0 missing |
+| 5 | Completeness | No receipt without day, store or number | = 0 |
+| 6 | Completeness | Share of receipts from a known store | ≥ 99.9% |
+| 7 | Accuracy | Share of receipts whose money identity balances | ≥ 99.9% (got 99.996%) |
+| 8 | Validity | Share of receipts with any data-quality flag | ≤ 5% (got 1.97%) |
+| 9 | Validity | Receipts with off-schema (rescued) data | = 0 |
+| 10 | Validity | Risk scores inside 0–100 | = 0 outside |
+| 11 | Validity | Eligible employees available for the score | ≥ 100 (got 2,516) |
+| 12 | Privacy | No name, birth-date or payroll columns in bronze, silver or gold | = 0 |
+
+Result on the full run: **12 of 12 passed** ([screenshot](docs/img/23_quality_gate_12_of_12_full_run.png)).
+
+### 3. It caught a real error
+
+On the first full 115-day run, Databricks retried the pipeline automatically and the retry left `silver.mv_checks` wrong (exact copies still in, no store names). **The gate failed checks 2 and 6 and blocked the job** ([screenshot](docs/img/12_full_run_gate_10_of_12.png)). We rebuilt only the affected tables (no re-ingestion), re-ran the gate with *Repair run*, and it passed ([counts after the fix](docs/img/16_full_run_counts_fixed.png), [job green](docs/img/17_full_run_job_green.png)).
+
+Per-day quality report (raw vs clean receipts, copies removed, % balanced, % flagged): table `gold.mv_data_quality_summary` ([screenshot, 14-day demo](docs/img/08_data_quality_summary_14_days.png)). Full explanation of every check: [`docs/PIPELINE.md`](docs/PIPELINE.md) §6.
 
 ## Architecture
 
