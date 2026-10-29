@@ -70,8 +70,8 @@ Length is unknown; this fits ~8–10 minutes. Cut slide 7 or 9 if it is 5 minute
 | 6 | Data quality | Flag, don't delete | Expectations at 3 levels (fail / drop / warn) + quality gate by dimension (completeness, uniqueness, consistency, validity, accuracy, privacy). | Expectations panel + `mv_data_quality_summary` + gate results |
 | 7 | Data quality | Same numbers, two implementations | Spark port reproduces Phase 1 to the cent on May 4–10. | Parity table (PIPELINE.md §9) |
 | 8 | Best practices | Streaming, MVs, liquid clustering | Where each is used and why; what we chose not to use (continuous streaming, ML without labels). | Table (PIPELINE.md §8) |
-| 9 | Analysis | Who and where to look first | Store ranking vs chain median (Munster voids 3.27%, 4.1× the chain median); 62 *review first* employees: 3× the void rate, 13× the walkout rate. | Gold query results / dashboard |
-| 10 | Conclusion | Value + next steps | Value: a daily, trustworthy, explainable risk ranking. Next: all 115 days, manager–employee approval pairs, Munster deep dive, dashboard + alerts. | 3 bullets |
+| 9 | Analysis | Who and where to look first | 115 days: 106 of 2,516 employees *review first* (2.6× voids, 2.5× discounts, 7.6× walkouts; 4.9× chance). Stores: Ireland Road and Hilliard Rome top the score; Munster voids 2.29%, 2.87× the chain median | Dashboard `22` (backup `18`–`20`) |
+| 10 | Conclusion | Value + next steps | Value: a daily, trustworthy, explainable risk ranking. Next: manager–employee approval pairs, Munster deep dive, alerts on the dashboard, a paid workspace sized for backfills. | 3 bullets |
 
 ### Numbers for the slides (Databricks)
 

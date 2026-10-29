@@ -6,9 +6,22 @@ Tec de Monterrey × Sun Holdings × Databricks Data Challenge · **Applebee's AI
 
 The data has **no fraud labels**, so everything the pipeline produces is a **risk signal** or an **anomaly**, never proof of fraud.
 
-> **New here?** Presenting or catching up: read [`docs/PRESENTER_GUIDE.md`](docs/PRESENTER_GUIDE.md) (15 minutes, plain language). Full detail: [`docs/PIPELINE.md`](docs/PIPELINE.md) (how every stage works and why). Phase 1 (the local EDA) is archived in [`phase1_eda/`](phase1_eda/README.md).
+> **New here?**
+> - **Presenting:** read [`docs/PRESENTER_GUIDE.md`](docs/PRESENTER_GUIDE.md) (15 min: story, glossary, slide-by-slide script, Q&A).
+> - **Building the deck:** [`docs/PHASE2_PLAN.md`](docs/PHASE2_PLAN.md) → "Presentation outline" and "Numbers for the slides" (which number and which screenshot from [`docs/img/`](docs/img/) goes on each slide).
+> - **Full detail / hard questions:** [`docs/PIPELINE.md`](docs/PIPELINE.md). Phase 1 is archived in [`phase1_eda/`](phase1_eda/README.md).
 
 ---
+
+## Results (Oct 28, 2026)
+
+- **Full run, all 115 days (2,142,846 receipts):** same numbers as the independent Phase 1 implementation: 229 exact copies removed, 2,142,617 clean receipts, 99.996% balance, 2,516 employees compared. Quality gate 12/12.
+- **Incremental loading proven:** adding a second week read only the new files (136K rows = exactly the new week).
+- **Safety net proven:** the quality gate blocked the job twice (a false alarm in our own privacy check, and a real error after Databricks' automatic recovery on the full load); both fixed by re-running only what failed.
+- **Analysis:** 106 of 2,516 employees are flagged *review first* (2.6× the void rate, 2.5× the discounts, 7.6× the walkouts of the rest; 4.9× what chance gives). Munster voids 2.29% of sales, 2.87× the chain median.
+- **Dashboard:** an AI/BI dashboard on the gold tables ([screenshot](docs/img/22_dashboard_overview.png)).
+
+Evidence: [`docs/img/`](docs/img/) (22 screenshots) and [`docs/PIPELINE.md` §9–10](docs/PIPELINE.md).
 
 ## Architecture
 
